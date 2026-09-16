@@ -1,0 +1,13 @@
+{
+  "name": "skillforge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SkillForge — skill graph, Angular frontend served by an Express BFF",
+  "scripts": {
+    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm --prefix backend install --include=dev && npm --prefix backend run build && npm --prefix backend run db:deploy",
+    "start": "node backend/dist/index.js",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend start",
+    "typecheck": "npm --prefix backend run typecheck"
+  }
+}

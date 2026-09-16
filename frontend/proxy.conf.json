@@ -1,0 +1,4 @@
+{
+  "/api": { "target": "http://skillforge.localhost:3002", "secure": false },
+  "/auth": { "target": "http://skillforge.localhost:3002", "secure": false }
+}

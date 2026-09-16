@@ -1,0 +1,64 @@
+// Prisma 7: the `prisma-client` generator replaced `prisma-client-js`,
+// and an explicit output path is now required. The client is emitted into
+// the source tree, so it is versioned by the build rather than hidden in
+// node_modules.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// A person known to this application.
+///
+/// The identity provider owns authentication; this table owns everything
+/// this product knows about that person. `authSub` is the `sub` claim from
+/// a verified token — stable for the lifetime of the account, and unchanged
+/// by email, username or password changes. That is why it, and not the
+/// email address, is the foreign key to the outside world.
+model User {
+  id      String @id @default(uuid()) @db.Uuid
+  authSub String @unique @map("auth_sub")
+
+  /// Projection of provider data, refreshed on every login. Convenient for
+  /// listing and searching; the provider remains the source of truth.
+  email       String?
+  displayName String? @map("display_name")
+  pictureUrl  String? @map("picture_url")
+
+  /// Application-owned fields. The provider knows nothing about these.
+  onboardedAt DateTime? @map("onboarded_at")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  lastLoginAt DateTime? @map("last_login_at")
+
+  skills Skill[]
+
+  @@map("users")
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+
+  @@map("skill_level")
+}
+
+model Skill {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @map("user_id") @db.Uuid
+  name      String
+  level     SkillLevel @default(BEGINNER)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("skills")
+}

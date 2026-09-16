@@ -1,0 +1,83 @@
+<main class="page">
+  <header class="head">
+    <span class="badge">Angular</span>
+    <h1>SkillForge</h1>
+    <p class="sub">Skill graph and learning path</p>
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Loading…</p>
+  } @else if (!user()) {
+    <section class="card">
+      <p>You are not signed in.</p>
+      <a class="button" href="/auth/login">Sign in</a>
+    </section>
+  } @else {
+    <section class="card">
+      <p class="label">Signed in as</p>
+      <p class="name">{{ user()!.displayName ?? user()!.email }}</p>
+
+      <p class="label">Subject id — issued by the identity provider</p>
+      <code class="sub-id">{{ user()!.sub }}</code>
+
+      <p class="label">Row id — created in our own database on first sign-in</p>
+      <code class="sub-id">{{ user()!.id }}</code>
+    </section>
+
+    <section class="card">
+      <h2>My skills</h2>
+      <p class="label">Stored in this application's PostgreSQL database</p>
+
+      <form class="row" (ngSubmit)="addSkill()">
+        <input
+          class="input"
+          name="skillName"
+          placeholder="Add a skill…"
+          maxlength="60"
+          [(ngModel)]="draftName"
+        />
+        <select class="input select" name="skillLevel" [(ngModel)]="draftLevel">
+          @for (level of levels; track level) {
+            <option [value]="level">{{ level.toLowerCase() }}</option>
+          }
+        </select>
+        <button class="button" type="submit" [disabled]="!canSubmit()">Add</button>
+      </form>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      @if (skills().length === 0) {
+        <p class="muted empty">Nothing yet — add your first skill above.</p>
+      } @else {
+        <ul class="list">
+          @for (skill of skills(); track skill.id) {
+            <li>
+              <span class="skill-name">{{ skill.name }}</span>
+              <span class="right">
+                <span class="pill">{{ skill.level.toLowerCase() }}</span>
+                <button
+                  class="icon"
+                  type="button"
+                  aria-label="Remove skill"
+                  (click)="removeSkill(skill.id)"
+                >
+                  ×
+                </button>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <a class="link" href="/auth/logout">Sign out</a>
+  }
+
+  <footer class="foot">
+    @if (peerAppUrl()) {
+      <a [href]="peerAppUrl()">Open CareerOS →</a>
+    }
+  </footer>
+</main>

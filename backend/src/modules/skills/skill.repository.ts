@@ -1,30 +1,83 @@
-import { prisma } from '../../lib/prisma.ts'
-import type { Skill, SkillLevel } from '../../generated/prisma/client.ts'
+import { prisma } from "../../lib/prisma.ts";
+import type {
+  LearningLanguage,
+  SkillSource,
+} from "../../generated/prisma/client.ts";
+
+const withRoadmap = {
+  skillMap: { select: { id: true, generatedAt: true } },
+  roadmap: {
+    include: {
+      stages: {
+        orderBy: { position: "asc" },
+        include: { steps: { orderBy: { position: "asc" } } },
+      },
+    },
+  },
+} as const;
+
+export type UserSkillWithRoadmap = NonNullable<
+  Awaited<ReturnType<typeof skillRepository.findBySlug>>
+>;
 
 export const skillRepository = {
-  listByUserId(userId: string): Promise<Skill[]> {
-    return prisma.skill.findMany({
+  listByUserId(userId: string) {
+    return prisma.userSkill.findMany({
       where: { userId },
-      orderBy: { name: 'asc' },
-    })
+      orderBy: { updatedAt: "desc" },
+      include: withRoadmap,
+    });
   },
 
-  listByAuthSub(authSub: string): Promise<Skill[]> {
-    return prisma.skill.findMany({
-      where: { user: { authSub } },
-      orderBy: { name: 'asc' },
-    })
+  listByAuthSub(sub: string) {
+    return prisma.userSkill.findMany({
+      where: { user: { authSub: sub } },
+      orderBy: { updatedAt: "desc" },
+      include: withRoadmap,
+    });
   },
 
-  create(userId: string, name: string, level: SkillLevel): Promise<Skill> {
-    return prisma.skill.create({ data: { userId, name, level } })
+  findBySlug(userId: string, slug: string) {
+    return prisma.userSkill.findUnique({
+      where: { userId_slug: { userId, slug } },
+      include: withRoadmap,
+    });
   },
 
-  findById(id: string): Promise<Skill | null> {
-    return prisma.skill.findUnique({ where: { id } })
+  upsertBySlug(input: {
+    userId: string;
+    name: string;
+    slug: string;
+    source: SkillSource;
+  }) {
+    return prisma.userSkill.upsert({
+      where: { userId_slug: { userId: input.userId, slug: input.slug } },
+      update: {},
+      create: {
+        userId: input.userId,
+        name: input.name,
+        slug: input.slug,
+        source: input.source,
+      },
+      include: withRoadmap,
+    });
   },
 
-  delete(id: string): Promise<Skill> {
-    return prisma.skill.delete({ where: { id } })
+  setLanguage(
+    userId: string,
+    slug: string,
+    learningLanguage: LearningLanguage,
+  ) {
+    return prisma.userSkill.update({
+      where: { userId_slug: { userId, slug } },
+      data: { learningLanguage },
+      include: withRoadmap,
+    });
   },
-}
+
+  deleteBySlug(userId: string, slug: string) {
+    return prisma.userSkill.delete({
+      where: { userId_slug: { userId, slug } },
+    });
+  },
+};

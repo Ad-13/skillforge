@@ -1,7 +1,3 @@
-// Prisma 7: the `prisma-client` generator replaced `prisma-client-js`,
-// and an explicit output path is now required. The client is emitted into
-// the source tree, so it is versioned by the build rather than hidden in
-// node_modules.
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -11,54 +7,242 @@ datasource db {
   provider = "postgresql"
 }
 
-/// A person known to this application.
-///
-/// The identity provider owns authentication; this table owns everything
-/// this product knows about that person. `authSub` is the `sub` claim from
-/// a verified token — stable for the lifetime of the account, and unchanged
-/// by email, username or password changes. That is why it, and not the
-/// email address, is the foreign key to the outside world.
+// ---------------------------------------------------------------------------
+// Enumerations
+// ---------------------------------------------------------------------------
+
+enum SkillSource {
+  MANUAL
+  CAREEROS
+
+  @@map("skill_source")
+}
+
+enum LearningLanguage {
+  EN
+  RU
+  DE
+
+  @@map("learning_language")
+}
+
+enum NodeRelation {
+  PREREQUISITE
+  CORE
+  ECOSYSTEM
+  RELATED
+
+  @@map("node_relation")
+}
+
+enum ContentOrigin {
+  AI
+  USER
+
+  @@map("content_origin")
+}
+
+enum ResourceKind {
+  LINK
+  NOTE
+
+  @@map("resource_kind")
+}
+
+enum ResourceSourceType {
+  DOCS
+  ARTICLE
+  VIDEO
+  REPO
+  COURSE
+
+  @@map("resource_source_type")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
 model User {
   id      String @id @default(uuid()) @db.Uuid
   authSub String @unique @map("auth_sub")
 
-  /// Projection of provider data, refreshed on every login. Convenient for
-  /// listing and searching; the provider remains the source of truth.
   email       String?
   displayName String? @map("display_name")
   pictureUrl  String? @map("picture_url")
 
-  /// Application-owned fields. The provider knows nothing about these.
   onboardedAt DateTime? @map("onboarded_at")
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   lastLoginAt DateTime? @map("last_login_at")
 
-  skills Skill[]
+  userSkills UserSkill[]
 
   @@map("users")
 }
 
-enum SkillLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
+// ---------------------------------------------------------------------------
+// The core: one skill belonging to one person
+// ---------------------------------------------------------------------------
+model UserSkill {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
 
-  @@map("skill_level")
-}
+  name String
 
-model Skill {
-  id        String     @id @default(uuid()) @db.Uuid
-  userId    String     @map("user_id") @db.Uuid
-  name      String
-  level     SkillLevel @default(BEGINNER)
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
+  slug String
+
+  source SkillSource @default(MANUAL)
+
+  learningLanguage LearningLanguage @default(EN) @map("learning_language")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, name])
+  skillMap  SkillMap?
+  roadmap   LearningRoadmap?
+  resources Resource[]
+
+  referencingNodes SkillMapNode[]
+
+  @@unique([userId, slug])
   @@index([userId])
-  @@map("skills")
+  @@map("user_skills")
+}
+
+// ---------------------------------------------------------------------------
+// Skill map — what surrounds the skill
+// ---------------------------------------------------------------------------
+
+model SkillMap {
+  id String @id @default(uuid()) @db.Uuid
+
+  userSkillId String @unique @map("user_skill_id") @db.Uuid
+
+  generatedAt DateTime @default(now()) @map("generated_at")
+
+  generatedBy String? @map("generated_by")
+
+  userSkill UserSkill      @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
+  nodes     SkillMapNode[]
+
+  @@map("skill_maps")
+}
+
+model SkillMapNode {
+  id         String @id @default(uuid()) @db.Uuid
+  skillMapId String @map("skill_map_id") @db.Uuid
+
+  parentId String? @map("parent_id") @db.Uuid
+
+  label    String
+  summary  String?
+  relation NodeRelation?
+  origin   ContentOrigin @default(AI)
+  position Int           @default(0)
+
+  linkedUserSkillId String? @map("linked_user_skill_id") @db.Uuid
+
+  skillMap SkillMap @relation(fields: [skillMapId], references: [id], onDelete: Cascade)
+
+  parent   SkillMapNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children SkillMapNode[] @relation("NodeTree")
+
+  linkedUserSkill UserSkill? @relation(fields: [linkedUserSkillId], references: [id], onDelete: SetNull)
+
+  @@index([skillMapId])
+  @@index([parentId])
+  @@map("skill_map_nodes")
+}
+
+// ---------------------------------------------------------------------------
+// Roadmap — how to learn the skill
+// ---------------------------------------------------------------------------
+
+model LearningRoadmap {
+  id          String @id @default(uuid()) @db.Uuid
+  userSkillId String @unique @map("user_skill_id") @db.Uuid
+
+  language LearningLanguage @default(EN)
+
+  generatedAt DateTime @default(now()) @map("generated_at")
+  generatedBy String?  @map("generated_by")
+
+  userSkill UserSkill       @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
+  stages    LearningStage[]
+
+  @@map("learning_roadmaps")
+}
+
+model LearningStage {
+  id        String @id @default(uuid()) @db.Uuid
+  roadmapId String @map("roadmap_id") @db.Uuid
+  position  Int
+
+  title String
+
+  rationale String?
+
+  roadmap LearningRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  steps   LearningStep[]
+
+  @@index([roadmapId])
+  @@map("learning_stages")
+}
+
+model LearningStep {
+  id       String @id @default(uuid()) @db.Uuid
+  stageId  String @map("stage_id") @db.Uuid
+  position Int
+
+  title   String
+  summary String?
+
+  completedAt DateTime? @map("completed_at")
+
+  stage     LearningStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  resources Resource[]
+
+  @@index([stageId])
+  @@map("learning_steps")
+}
+
+// ---------------------------------------------------------------------------
+// Resources — links and notes
+// ---------------------------------------------------------------------------
+
+model Resource {
+  id String @id @default(uuid()) @db.Uuid
+
+  userSkillId String @map("user_skill_id") @db.Uuid
+
+  stepId String? @map("step_id") @db.Uuid
+
+  kind  ResourceKind
+  title String
+
+  url String?
+
+  searchQuery String? @map("search_query")
+
+  sourceType ResourceSourceType? @map("source_type")
+
+  content String?
+
+  language LearningLanguage?
+  origin   ContentOrigin     @default(USER)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userSkill UserSkill @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
+
+  step LearningStep? @relation(fields: [stepId], references: [id], onDelete: SetNull)
+
+  @@index([userSkillId])
+  @@index([stepId])
+  @@map("resources")
 }

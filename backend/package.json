@@ -21,6 +21,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "jose": "^6.2.12",
+    "openai": "^6.48.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {

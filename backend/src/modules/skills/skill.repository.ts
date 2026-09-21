@@ -63,6 +63,13 @@ export const skillRepository = {
     });
   },
 
+  listByIdsForUser(userId: string, ids: readonly string[]) {
+    return prisma.userSkill.findMany({
+      where: { userId, id: { in: [...ids] } },
+      select: { id: true, slug: true, name: true },
+    });
+  },
+
   setLanguage(
     userId: string,
     slug: string,

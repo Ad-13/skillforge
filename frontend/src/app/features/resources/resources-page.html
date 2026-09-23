@@ -1,0 +1,181 @@
+<nav class="crumbs">
+  <a routerLink="/">← All skills</a>
+  <span class="faint">·</span>
+  <a [routerLink]="['/skills', slug()]">Skill map</a>
+  <span class="faint">·</span>
+  <a [routerLink]="['/skills', slug(), 'roadmap']">Learning plan</a>
+</nav>
+
+<header class="head">
+  <div class="head-text">
+    <p class="eyebrow">Resources</p>
+    <h1>{{ title() }}</h1>
+
+    @if (resources(); as set) {
+      <p class="meta faint">
+        {{ set.total }} resource(s) across {{ set.stages.length }} stage(s)
+      </p>
+    }
+  </div>
+
+  @if (!missing() && stageCount() > 0) {
+    <div class="head-actions">
+      <button class="btn btn--quiet" type="button" (click)="toggleAll()">
+        {{ allOpen() ? 'Collapse all' : 'Expand all' }}
+      </button>
+    </div>
+  }
+</header>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+
+@if (missing()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune name="HAGALAZ" [size]="34" />
+      <h2>No such skill</h2>
+      <a class="btn btn--ghost" routerLink="/">Back to all skills</a>
+    </div>
+  </section>
+} @else if (loading()) {
+  <section class="panel state">
+    <div class="panel-body"><sf-rune-loader label="Reading the marks" /></div>
+  </section>
+} @else if (resources(); as set) {
+  @if (!set.hasRoadmap) {
+    <section class="panel state">
+      <div class="panel-body">
+        <sf-rune name="TIWAZ" [size]="34" />
+        <h2>No plan yet</h2>
+        <p class="muted">
+          Resources hang on the steps of a plan, so there is nowhere to put them until the plan
+          exists. Forge one and come back.
+        </p>
+        <a class="btn btn--primary" [routerLink]="['/skills', slug(), 'roadmap']">
+          Go to the plan
+        </a>
+      </div>
+    </section>
+  } @else {
+    <ol class="stages">
+      @for (stage of set.stages; track stage.id; let i = $index) {
+        <li class="stage stagger" [class.is-open]="isOpen(stage.id)" [style.--i]="i">
+          <div class="stage-head">
+            <button
+              class="stage-toggle"
+              type="button"
+              [attr.aria-expanded]="isOpen(stage.id)"
+              [attr.aria-controls]="'stage-body-' + stage.id"
+              (click)="toggleStage(stage.id)"
+            >
+              <span class="stage-number">{{ i + 1 }}</span>
+              <span class="stage-title">{{ stage.title }}</span>
+
+              <span class="stage-count">
+                @if (countIn(stage) > 0) {
+                  <span class="tag tag--accent">{{ countIn(stage) }}</span>
+                  <span class="stage-tally">{{ stage.covered }}/{{ stage.steps.length }} steps</span>
+                } @else {
+                  <span class="stage-tally faint">empty</span>
+                }
+              </span>
+
+              <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true">
+                <polyline points="4,6 8,10 12,6" />
+              </svg>
+            </button>
+
+            <a
+              class="stage-open"
+              [routerLink]="['/skills', slug(), 'stages', stage.id, 'resources']"
+              [attr.aria-label]="'Open resources for ' + stage.title"
+            >
+              Open →
+            </a>
+          </div>
+
+          @if (isOpen(stage.id)) {
+            <div class="stage-body" [id]="'stage-body-' + stage.id">
+              <ul class="steps">
+                @for (step of stage.steps; track step.id) {
+                  <li class="step" [class.is-complete]="step.complete">
+                    <a
+                      class="step-title"
+                      [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']"
+                    >
+                      <span class="step-box" aria-hidden="true">{{ step.complete ? '✓' : '' }}</span>
+                      <span class="step-name">{{ step.title }}</span>
+                      <span class="step-count">
+                        @if (step.resources.length > 0) {
+                          <span class="tag tag--accent">{{ step.resources.length }}</span>
+                        }
+                        <span class="step-go" aria-hidden="true">→</span>
+                      </span>
+                    </a>
+
+                    @if (step.resources.length > 0) {
+                      <ul class="links">
+                        @for (resource of step.resources; track resource.id) {
+                          <li class="link">
+                            <span class="link-kind">
+                              {{ resource.kind === 'NOTE' ? 'note' : sourceLabel(resource) }}
+                            </span>
+                            @if (resource.kind === 'NOTE') {
+                              <a
+                                class="link-title"
+                                [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']"
+                              >
+                                {{ resource.title }}
+                              </a>
+                            } @else {
+                              <a
+                                class="link-title"
+                                [href]="hrefFor(resource)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {{ resource.title }}
+                              </a>
+                            }
+                            @if (resource.origin === 'USER') {
+                              <span class="tag">mine</span>
+                            }
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <p class="step-empty faint">Nothing yet.</p>
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </li>
+      }
+    </ol>
+
+    @if (set.general.length > 0) {
+      <section class="general">
+        <h2 class="general-title">For the skill as a whole</h2>
+        <ul class="links">
+          @for (resource of set.general; track resource.id) {
+            <li class="link">
+              <span class="link-kind">{{ sourceLabel(resource) }}</span>
+              <a
+                class="link-title"
+                [href]="hrefFor(resource)"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ resource.title }}
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+}

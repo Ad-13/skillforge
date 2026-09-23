@@ -1,13 +1,14 @@
 import { Component, ChangeDetectionStrategy, computed, input, output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Rune } from '../../shared/rune';
 import { RELATION_RUNE, runeForSlug, type RuneName } from '../../shared/runes';
 import { layoutSkillMap, type LaidOutNode } from './tree-layout';
-import type { MapLens, MapNode, NodeRelation } from '../../core/api.types';
+import type { LinkedSkill, MapLens, MapNode, NodeRelation } from '../../core/api.types';
 
 @Component({
   selector: 'sf-skill-tree',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Rune],
+  imports: [Rune, RouterLink],
   templateUrl: './skill-tree.html',
   styleUrl: './skill-tree.css',
 })
@@ -16,7 +17,10 @@ export class SkillTree {
   readonly rootSlug = input<string>('');
   readonly lens = input<MapLens>('FOUNDATION');
   readonly pendingId = input<string | null>(null);
+  readonly promotingId = input<string | null>(null);
+
   readonly expand = output<string>();
+  readonly promote = output<string>();
 
   protected readonly layout = computed(() => layoutSkillMap(this.root(), this.collapsedIds()));
 
@@ -52,6 +56,16 @@ export class SkillTree {
 
   protected canFold(node: LaidOutNode): boolean {
     return node.expanded && (node.collapsed || node.hiddenCount > 0 || !node.terminal);
+  }
+
+  protected percentOf(linked: LinkedSkill): number {
+    return Math.round(linked.progress * 100);
+  }
+
+  protected onPromote(event: Event, node: LaidOutNode): void {
+    event.stopPropagation();
+    if (this.promotingId() !== null) return;
+    this.promote.emit(node.id);
   }
 
   protected onClick(node: LaidOutNode): void {

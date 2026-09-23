@@ -3,6 +3,7 @@ import {
   skillRepository,
   type UserSkillWithRoadmap,
 } from "./skill.repository.ts";
+import { mapRepository } from "../maps/map.repository.ts";
 import { canonicaliseOrThrow } from "../../lib/canonical.ts";
 import { identifySkill } from "../ai/identify.ts";
 import { BadRequestError, NotFoundError } from "../../lib/errors.ts";
@@ -154,6 +155,8 @@ export const skillService = {
       kind: identified.kind ?? "TECHNOLOGY",
     });
 
+    await mapRepository.linkNodesBySlug(userId, skill.slug, skill.id);
+
     return { status: "created", skill: toSummary(skill) };
   },
 
@@ -176,6 +179,8 @@ export const skillService = {
         slug,
         source: "CAREEROS",
       });
+
+      await mapRepository.linkNodesBySlug(userId, skill.slug, skill.id);
 
       created.push(toSummary(skill));
     }

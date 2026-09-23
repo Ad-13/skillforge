@@ -31,7 +31,10 @@ export class SkillMapPage {
   protected readonly lenses = LENSES;
   protected readonly lens = signal<LensDescriptor>(LENSES[0] as LensDescriptor);
 
-  private readonly maps = signal<Partial<Record<MapLens, SkillMap | null>>>({});
+  private readonly cache = signal<{
+    slug: string;
+    maps: Partial<Record<MapLens, SkillMap | null>>;
+  }>({ slug: '', maps: {} });
 
   protected readonly loading = signal(false);
   protected readonly generating = signal(false);
@@ -39,8 +42,13 @@ export class SkillMapPage {
   protected readonly error = signal<string | null>(null);
   protected readonly missing = signal(false);
   protected readonly lastEmpty = signal<string | null>(null);
+  protected readonly promotingNodeId = signal<string | null>(null);
+  protected readonly promoted = signal<string | null>(null);
 
-  protected readonly map = computed(() => this.maps()[this.lens().lens] ?? null);
+  protected readonly map = computed(() => {
+    const cache = this.cache();
+    return cache.slug === this.slug() ? (cache.maps[this.lens().lens] ?? null) : null;
+  });
   protected readonly skill = computed(() => this.skills.bySlug(this.slug()));
   protected readonly title = computed(() => this.skill()?.name ?? this.slug());
 
@@ -59,13 +67,30 @@ export class SkillMapPage {
     });
   }
 
+  private store(slug: string, lens: MapLens, map: SkillMap | null): void {
+    this.cache.update((current) =>
+      current.slug === slug
+        ? { slug, maps: { ...current.maps, [lens]: map } }
+        : { slug, maps: { [lens]: map } },
+    );
+  }
+
   protected selectLens(lens: LensDescriptor): void {
     if (this.generating() || this.pendingNodeId() !== null) return;
     this.lens.set(lens);
   }
 
   private async fetch(slug: string, lens: LensDescriptor): Promise<void> {
-    if (this.maps()[lens.lens] !== undefined) return;
+    const cached = this.cache();
+
+    if (cached.slug !== slug) {
+      this.cache.set({ slug, maps: {} });
+      this.error.set(null);
+      this.lastEmpty.set(null);
+      this.promoted.set(null);
+    } else if (cached.maps[lens.lens] !== undefined) {
+      return;
+    }
 
     this.loading.set(true);
     this.error.set(null);
@@ -73,7 +98,7 @@ export class SkillMapPage {
 
     try {
       const response = await this.api.getMap(slug, lens.path);
-      this.maps.update((current) => ({ ...current, [lens.lens]: response.map }));
+      this.store(slug, lens.lens, response.map);
     } catch (error: unknown) {
       const message = describeHttpError(error);
       if (message === 'Not found.' || message === 'Skill not found') this.missing.set(true);
@@ -93,7 +118,7 @@ export class SkillMapPage {
 
     try {
       const response = await this.api.generateMap(this.slug(), lens.path);
-      this.maps.update((current) => ({ ...current, [lens.lens]: response.map }));
+      this.store(this.slug(), lens.lens, response.map);
       this.skills.markHasMap(this.slug());
     } catch (error: unknown) {
       this.error.set(describeHttpError(error));
@@ -112,7 +137,7 @@ export class SkillMapPage {
 
     try {
       const response = await this.api.expandNode(this.slug(), lens.path, nodeId);
-      this.maps.update((current) => ({ ...current, [lens.lens]: response.map }));
+      this.store(this.slug(), lens.lens, response.map);
 
       if (response.added === 0) {
         this.lastEmpty.set('Nothing further — this is where that branch ends.');
@@ -121,6 +146,33 @@ export class SkillMapPage {
       this.error.set(describeHttpError(error));
     } finally {
       this.pendingNodeId.set(null);
+    }
+  }
+
+  protected async promote(nodeId: string): Promise<void> {
+    if (this.promotingNodeId() !== null || this.pendingNodeId() !== null) return;
+
+    const lens = this.lens();
+    this.promotingNodeId.set(nodeId);
+    this.error.set(null);
+    this.lastEmpty.set(null);
+    this.promoted.set(null);
+
+    try {
+      const response = await this.api.promoteNode(this.slug(), lens.path, nodeId);
+      this.cache.set({ slug: this.slug(), maps: { [lens.lens]: response.map } });
+
+      this.promoted.set(
+        response.alsoLinked > 0
+          ? `Added to your skills, and linked on ${response.alsoLinked} other node(s).`
+          : 'Added to your skills.',
+      );
+
+      void this.skills.load(true);
+    } catch (error: unknown) {
+      this.error.set(describeHttpError(error));
+    } finally {
+      this.promotingNodeId.set(null);
     }
   }
 }

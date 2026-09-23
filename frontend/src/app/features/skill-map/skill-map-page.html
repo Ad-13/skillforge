@@ -27,6 +27,10 @@
       </a>
     }
 
+    @if (!missing() && skill()?.hasRoadmap) {
+      <a class="btn btn--ghost" [routerLink]="['/skills', slug(), 'resources']">Resources</a>
+    }
+
     @if (!missing() && map()) {
       <button
         class="btn btn--ghost"
@@ -67,6 +71,10 @@
   <p class="notice" role="status">{{ lastEmpty() }}</p>
 }
 
+@if (promoted()) {
+  <p class="notice" role="status">{{ promoted() }}</p>
+}
+
 @if (missing()) {
   <section class="panel state">
     <div class="panel-body">
@@ -102,7 +110,9 @@
         [rootSlug]="slug()"
         [lens]="lens().lens"
         [pendingId]="pendingNodeId()"
+        [promotingId]="promotingNodeId()"
         (expand)="expand($event)"
+        (promote)="promote($event)"
       />
     </div>
   </section>
@@ -112,8 +122,8 @@
       <sf-rune name="BERKANAN" [size]="34" />
       <h2>{{ lens().question }}</h2>
       <p class="muted">
-        Nothing is generated until you ask. This builds the first level only — every node after that
-        is opened by clicking it, so the map goes exactly as deep as you take it.
+        Nothing is generated until you ask. This builds the first level only — every node after
+        that is opened by clicking it, so the map goes exactly as deep as you take it.
       </p>
       <button class="btn btn--primary" type="button" (click)="generate()">
         Generate {{ lens().title.toLowerCase() }}

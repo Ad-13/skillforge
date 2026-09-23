@@ -73,6 +73,21 @@ export const skillRepository = {
     });
   },
 
+  listWithRoadmapByIdsForUser(userId: string, ids: readonly string[]) {
+    return prisma.userSkill.findMany({
+      where: { userId, id: { in: [...ids] } },
+      include: withRoadmap,
+    });
+  },
+
+  async slugIndexForUser(userId: string): Promise<Map<string, string>> {
+    const rows = await prisma.userSkill.findMany({
+      where: { userId },
+      select: { id: true, slug: true },
+    });
+    return new Map(rows.map((row) => [row.slug, row.id]));
+  },
+
   setLanguage(
     userId: string,
     slug: string,

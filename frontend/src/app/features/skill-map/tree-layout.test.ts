@@ -12,7 +12,7 @@ const node = (id: string, children: MapNode[] = []): MapNode => ({
   origin: 'AI',
   expanded: children.length > 0,
   expandedAt: children.length > 0 ? '2026-09-21T00:00:00.000Z' : null,
-  linkedSlug: null,
+  linked: null,
   children,
 });
 

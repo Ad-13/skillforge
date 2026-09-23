@@ -1,0 +1,126 @@
+<nav class="crumbs">
+  <a routerLink="/">← All skills</a>
+  <span class="faint">·</span>
+  <a [routerLink]="['/skills', slug()]">{{ skillName() }}</a>
+  <span class="faint">·</span>
+  <a [routerLink]="['/skills', slug(), 'roadmap']">Plan</a>
+  <span class="faint">·</span>
+  <a [routerLink]="['/skills', slug(), 'resources']">All resources</a>
+</nav>
+
+@if (stage(); as st) {
+  <header class="head">
+    <div class="head-text">
+      <p class="eyebrow">Stage {{ st.position + 1 }} · resources</p>
+      <h1>{{ st.title }}</h1>
+      @if (st.rationale) {
+        <p class="muted lede">{{ st.rationale }}</p>
+      }
+      <p class="meta faint">
+        {{ total() }} resource(s) · {{ st.covered }} of {{ st.steps.length }} steps covered
+      </p>
+    </div>
+
+    <div class="head-actions">
+      <button
+        class="btn btn--ghost"
+        type="button"
+        [disabled]="forging() || loading()"
+        (click)="forge()"
+      >
+        {{ forging() ? 'Searching…' : total() > 0 ? 'Find again for all steps' : 'Find for all steps' }}
+      </button>
+    </div>
+  </header>
+}
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+
+@if (notice()) {
+  <p class="notice" role="status">{{ notice() }}</p>
+}
+
+@if (missing()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune name="HAGALAZ" [size]="34" />
+      <h2>No such stage</h2>
+      <a class="btn btn--ghost" [routerLink]="['/skills', slug(), 'resources']">All resources</a>
+    </div>
+  </section>
+} @else if (loading()) {
+  <section class="panel state">
+    <div class="panel-body"><sf-rune-loader label="Reading the marks" /></div>
+  </section>
+} @else if (forging()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune-loader [size]="30" label="Looking for material" />
+      <p class="muted wait">
+        One request for the whole stage, so the model can spread the coverage instead of giving
+        every step the same landing page.
+      </p>
+    </div>
+  </section>
+} @else if (stage(); as st) {
+  <ol class="steps">
+    @for (step of st.steps; track step.id; let i = $index) {
+      <li class="step stagger" [class.is-complete]="step.complete" [style.--i]="i">
+        <a
+          class="step-head"
+          [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']"
+        >
+          <span class="step-box" aria-hidden="true">{{ step.complete ? '✓' : '' }}</span>
+          <span class="step-text">
+            <span class="step-title">{{ step.title }}</span>
+            @if (step.summary) {
+              <span class="step-summary muted">{{ step.summary }}</span>
+            }
+          </span>
+          <span class="step-count">
+            @if (step.resources.length > 0) {
+              <span class="tag tag--accent">{{ step.resources.length }}</span>
+            } @else {
+              <span class="tag">none</span>
+            }
+            <span class="step-go" aria-hidden="true">→</span>
+          </span>
+        </a>
+
+        @if (step.resources.length > 0) {
+          <ul class="links">
+            @for (resource of step.resources; track resource.id) {
+              <li class="link">
+                <span class="link-kind">
+                  {{ resource.kind === 'NOTE' ? 'note' : sourceLabel(resource) }}
+                </span>
+                @if (resource.kind === 'NOTE') {
+                  <a
+                    class="link-title"
+                    [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']"
+                  >
+                    {{ resource.title }}
+                  </a>
+                } @else {
+                  <a
+                    class="link-title"
+                    [href]="hrefFor(resource)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ resource.title }}
+                  </a>
+                }
+                @if (resource.origin === 'USER') {
+                  <span class="tag">mine</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </li>
+    }
+  </ol>
+}

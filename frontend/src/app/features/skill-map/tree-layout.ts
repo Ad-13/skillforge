@@ -1,5 +1,5 @@
 import { hierarchy, tree } from 'd3-hierarchy';
-import type { MapNode, NodeRelation } from '../../core/api.types';
+import type { LinkedSkill, MapNode, NodeRelation } from '../../core/api.types';
 
 const ROOT_WIDTH = 190;
 const NODE_WIDTH = 218;
@@ -8,12 +8,16 @@ const COLUMN_GAP = 62;
 const ROOT_HEIGHT = 74;
 const NODE_HEIGHT = 92;
 
+const LINK_ROW = 26;
+
 const GAP_SIBLING = 12;
 const GAP_SUBTREE = 28;
 const PADDING = 20;
 
 const widthAt = (depth: number): number => (depth === 0 ? ROOT_WIDTH : NODE_WIDTH);
-const heightAt = (depth: number): number => (depth === 0 ? ROOT_HEIGHT : NODE_HEIGHT);
+
+const heightOf = (node: MapNode, depth: number): number =>
+  (depth === 0 ? ROOT_HEIGHT : NODE_HEIGHT) + (node.linked ? LINK_ROW : 0);
 
 const columnLeft = (depth: number): number =>
   depth === 0
@@ -28,7 +32,7 @@ export interface LaidOutNode {
   summary: string | null;
   relation: NodeRelation | null;
   origin: string;
-  linkedSlug: string | null;
+  linked: LinkedSkill | null;
   expanded: boolean;
   terminal: boolean;
   collapsed: boolean;
@@ -84,7 +88,7 @@ export const layoutSkillMap = (
   const layout = tree<MapNode>()
     .nodeSize([UNIT, 1])
     .separation((a, b) => {
-      const half = heightAt(a.depth) / 2 + heightAt(b.depth) / 2;
+      const half = heightOf(a.data, a.depth) / 2 + heightOf(b.data, b.depth) / 2;
       const gap = a.parent === b.parent ? GAP_SIBLING : GAP_SUBTREE;
       return (half + gap) / UNIT;
     });
@@ -92,7 +96,8 @@ export const layoutSkillMap = (
   const positioned = layout(rooted);
 
   const all = positioned.descendants();
-  const top = Math.min(...all.map((n) => n.x - heightAt(n.depth) / 2));
+
+  const top = Math.min(...all.map((n) => n.x - heightOf(n.data, n.depth) / 2));
   const shift = PADDING - top;
 
   const nodes: LaidOutNode[] = all.map((n) => ({
@@ -101,16 +106,16 @@ export const layoutSkillMap = (
     summary: n.data.summary,
     relation: n.data.relation,
     origin: n.data.origin,
-    linkedSlug: n.data.linkedSlug,
+    linked: n.data.linked,
     expanded: n.data.expanded,
     terminal: n.data.expanded && !collapsedIds.has(n.data.id) && n.data.children.length === 0,
     collapsed: collapsedIds.has(n.data.id),
     hiddenCount: hidden.get(n.data.id) ?? 0,
     depth: n.depth,
     x: columnLeft(n.depth),
-    y: n.x + shift - heightAt(n.depth) / 2,
+    y: n.x + shift - heightOf(n.data, n.depth) / 2,
     width: widthAt(n.depth),
-    height: heightAt(n.depth),
+    height: heightOf(n.data, n.depth),
   }));
 
   const byId = new Map(nodes.map((node) => [node.id, node]));

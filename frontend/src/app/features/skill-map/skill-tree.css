@@ -72,7 +72,6 @@
   stroke: var(--rel, var(--line-strong));
   stroke-width: 1.5;
   opacity: 0.5;
-
   stroke-dasharray: 1400;
   stroke-dashoffset: 1400;
   animation: draw-line var(--dur-slow) var(--ease-out) forwards;
@@ -244,6 +243,7 @@
   font-weight: 600;
   line-height: 1.25;
   min-width: 0;
+
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -271,4 +271,105 @@
 
 .node[data-depth='0'] .node-summary {
   display: none;
+}
+
+/* --- Linked nodes ------------------------------------------------------ */
+
+.node-link {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 18px;
+  padding-top: 3px;
+  border-top: var(--hairline) solid var(--line);
+}
+
+.node-bar {
+  flex: 1 1 auto;
+  height: 3px;
+  min-width: 18px;
+  border-radius: 99px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.node-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+.node-pct {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+}
+
+.node-pct--none {
+  flex: 1 1 auto;
+  color: var(--ink-faint);
+}
+
+.node-go {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--ink-faint);
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  transition:
+    color var(--dur) var(--ease-out),
+    background-color var(--dur) var(--ease-out);
+}
+
+.node-go:hover,
+.node-go:focus-visible {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.node-promote {
+  position: absolute;
+  right: var(--space-2);
+  bottom: 4px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--ink-muted);
+  background: var(--surface-raised);
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: -8px 0 8px 2px var(--surface-raised);
+  transition:
+    opacity var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out);
+}
+
+.node.is-active .node-promote,
+.node:focus-within .node-promote {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.node-promote:hover:not(:disabled),
+.node-promote:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.node-promote:disabled {
+  opacity: 0;
+}
+
+.node.is-promoting .node-promote,
+.node.is-promoting .node-promote:disabled {
+  opacity: 1;
+  pointer-events: none;
 }

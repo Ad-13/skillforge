@@ -2,6 +2,8 @@ import { mapRepository } from "./map.repository.ts";
 import { skillRepository } from "../skills/skill.repository.ts";
 import { expandNode, type LensName } from "../ai/expansion.generator.ts";
 import { NotFoundError, BadRequestError } from "../../lib/errors.ts";
+import { canonicalise } from "../../lib/canonical.ts";
+import { summariseProgress } from "../../lib/progress.ts";
 
 export type { LensName };
 
@@ -22,6 +24,15 @@ export const parseLens = (raw: unknown): LensName => {
   return found;
 };
 
+export interface LinkedSkillView {
+  slug: string;
+  name: string;
+  hasRoadmap: boolean;
+  progress: number;
+  totalSteps: number;
+  completedSteps: number;
+}
+
 export interface MapNodeView {
   id: string;
   label: string;
@@ -31,7 +42,7 @@ export interface MapNodeView {
   origin: string;
   expandedAt: string | null;
   expanded: boolean;
-  linkedSlug: string | null;
+  linked: LinkedSkillView | null;
   children: MapNodeView[];
 }
 
@@ -58,7 +69,8 @@ interface NodeRow {
 
 const buildTree = (
   rows: readonly NodeRow[],
-  slugById: ReadonlyMap<string, string>,
+  linkedById: ReadonlyMap<string, LinkedSkillView>,
+  ownSkill: LinkedSkillView,
 ): MapNodeView | null => {
   const views = new Map<string, MapNodeView>();
 
@@ -72,9 +84,12 @@ const buildTree = (
       origin: row.origin,
       expandedAt: row.expandedAt?.toISOString() ?? null,
       expanded: row.expandedAt !== null,
-      linkedSlug: row.linkedUserSkillId
-        ? (slugById.get(row.linkedUserSkillId) ?? null)
-        : null,
+      linked:
+        row.parentId === null
+          ? ownSkill
+          : row.linkedUserSkillId
+            ? (linkedById.get(row.linkedUserSkillId) ?? null)
+            : null,
       children: [],
     });
   }
@@ -96,6 +111,27 @@ const buildTree = (
   return root;
 };
 
+interface SkillWithProgress {
+  slug: string;
+  name: string;
+  roadmap: {
+    stages: { title: string; steps: { completedAt: Date | null }[] }[];
+  } | null;
+}
+
+const toLinkedView = (skill: SkillWithProgress): LinkedSkillView => {
+  const summary = summariseProgress(skill.roadmap?.stages ?? []);
+
+  return {
+    slug: skill.slug,
+    name: skill.name,
+    hasRoadmap: skill.roadmap !== null,
+    progress: summary.progress,
+    totalSteps: summary.totalSteps,
+    completedSteps: summary.completedSteps,
+  };
+};
+
 export const mapService = {
   async getForSkill(
     userId: string,
@@ -114,16 +150,17 @@ export const mapService = {
       generatedBy: map.generatedBy,
       root: buildTree(
         map.nodes,
-        await this.slugsForLinkedNodes(userId, map.nodes),
+        await this.linkedSkills(userId, map.nodes),
+        toLinkedView(skill),
       ),
       nodeCount: map.nodes.length,
     };
   },
 
-  async slugsForLinkedNodes(
+  async linkedSkills(
     userId: string,
     nodes: readonly { linkedUserSkillId: string | null }[],
-  ): Promise<Map<string, string>> {
+  ): Promise<Map<string, LinkedSkillView>> {
     const ids = [
       ...new Set(
         nodes
@@ -133,8 +170,59 @@ export const mapService = {
     ];
     if (ids.length === 0) return new Map();
 
-    const skills = await skillRepository.listByIdsForUser(userId, ids);
-    return new Map(skills.map((skill) => [skill.id, skill.slug]));
+    const skills = await skillRepository.listWithRoadmapByIdsForUser(
+      userId,
+      ids,
+    );
+    return new Map(skills.map((skill) => [skill.id, toLinkedView(skill)]));
+  },
+
+  async promote(
+    userId: string,
+    nodeId: string,
+  ): Promise<{ map: SkillMapView; skillSlug: string; alsoLinked: number }> {
+    const node = await mapRepository.findNode(nodeId);
+    if (!node) throw new NotFoundError("Node not found");
+    if (node.skillMap.userSkill.userId !== userId)
+      throw new NotFoundError("Node not found");
+
+    if (node.parentId === null) {
+      throw new BadRequestError("The root of a map is already this skill");
+    }
+
+    if (node.linkedUserSkillId !== null) {
+      throw new BadRequestError("This node already has a skill");
+    }
+
+    const canonical = canonicalise(node.label);
+    const name = canonical.name;
+    const slug = canonical.slug.length > 0 ? canonical.slug : node.slug;
+
+    const created = await skillRepository.upsertBySlug({
+      userId,
+      name,
+      slug,
+      source: "MANUAL",
+    });
+
+    const linked = await mapRepository.linkNodesBySlug(
+      userId,
+      slug,
+      created.id,
+    );
+
+    const map = await this.getForSkill(
+      userId,
+      node.skillMap.userSkill.slug,
+      node.skillMap.lens as LensName,
+    );
+    if (!map) throw new NotFoundError("Map not found");
+
+    return {
+      map,
+      skillSlug: created.slug,
+      alsoLinked: Math.max(0, linked - 1),
+    };
   },
 
   async generate(
@@ -181,13 +269,18 @@ export const mapService = {
       parentSlug: skill.slug,
       children: accepted,
       startPosition: 0,
+      linkBySlug: await skillRepository.slugIndexForUser(userId),
     });
 
     return {
       lens,
       generatedAt: skillMap.generatedAt.toISOString(),
       generatedBy: model,
-      root: buildTree(nodes, await this.slugsForLinkedNodes(userId, nodes)),
+      root: buildTree(
+        nodes,
+        await this.linkedSkills(userId, nodes),
+        toLinkedView(skill),
+      ),
       nodeCount: nodes.length,
     };
   },
@@ -209,10 +302,14 @@ export const mapService = {
     const lens = node.skillMap.lens as LensName;
     const skill = node.skillMap.userSkill;
 
-    const [mapSlugs, siblings] = await Promise.all([
+    const [mapSlugs, siblings, linkBySlug, owner] = await Promise.all([
       mapRepository.slugsInMap(node.skillMapId),
       mapRepository.childrenOf(node.id),
+      skillRepository.slugIndexForUser(userId),
+      skillRepository.findBySlug(userId, skill.slug),
     ]);
+
+    if (!owner) throw new NotFoundError("Skill not found");
 
     const pathSlugs = [...node.ancestorSlugs, node.slug];
 
@@ -240,6 +337,7 @@ export const mapService = {
       parentSlug: node.slug,
       children: accepted,
       startPosition: siblings.nextPosition,
+      linkBySlug,
     });
 
     return {
@@ -247,7 +345,11 @@ export const mapService = {
         lens,
         generatedAt: node.skillMap.generatedAt.toISOString(),
         generatedBy: model,
-        root: buildTree(nodes, await this.slugsForLinkedNodes(userId, nodes)),
+        root: buildTree(
+          nodes,
+          await this.linkedSkills(userId, nodes),
+          toLinkedView(owner),
+        ),
         nodeCount: nodes.length,
       },
       added,

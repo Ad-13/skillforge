@@ -56,6 +56,7 @@ export const mapRepository = {
           relation: null,
           origin: "AI",
           position: 0,
+          linkedUserSkillId: input.userSkillId,
         },
       });
 
@@ -70,6 +71,7 @@ export const mapRepository = {
     parentSlug: string;
     children: readonly AcceptedChild[];
     startPosition: number;
+    linkBySlug?: ReadonlyMap<string, string>;
   }) {
     const rows = input.children.map((child, index) => ({
       id: crypto.randomUUID(),
@@ -77,6 +79,7 @@ export const mapRepository = {
       parentId: input.parentId,
       label: child.label,
       slug: child.slug,
+      linkedUserSkillId: input.linkBySlug?.get(child.slug) ?? null,
       ancestorSlugs: [...input.parentAncestors, input.parentSlug],
       summary: child.summary,
       relation: child.relation,
@@ -107,6 +110,30 @@ export const mapRepository = {
       select: { slug: true },
     });
     return rows.map((row) => row.slug);
+  },
+
+  async linkNodesBySlug(
+    userId: string,
+    slug: string,
+    userSkillId: string,
+  ): Promise<number> {
+    const rows = await prisma.skillMapNode.findMany({
+      where: {
+        slug,
+        linkedUserSkillId: null,
+        skillMap: { userSkill: { userId } },
+      },
+      select: { id: true },
+    });
+
+    if (rows.length === 0) return 0;
+
+    const { count } = await prisma.skillMapNode.updateMany({
+      where: { id: { in: rows.map((row) => row.id) } },
+      data: { linkedUserSkillId: userSkillId },
+    });
+
+    return count;
   },
 
   async childrenOf(

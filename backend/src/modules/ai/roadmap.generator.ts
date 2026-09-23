@@ -16,11 +16,11 @@ const roadmapSchema = z.object({
             }),
           )
           .min(1)
-          .max(8),
+          .max(12),
       }),
     )
     .min(2)
-    .max(7),
+    .max(10),
 });
 
 export type GeneratedRoadmap = z.infer<typeof roadmapSchema>;
@@ -53,7 +53,15 @@ const buildSystemPrompt = (language: string, kind: string): string => {
     "A phase of learning, not a category. Stages are ordered, and the order is",
     "the point: each one should be doable with what the previous ones taught,",
     "and finishing it should leave the person able to do something they could",
-    "not do before. Three to five stages suits most skills.",
+    "not do before.",
+    "",
+    "HOW MANY",
+    "As many as the subject has, and no more. Three to five stages of three to",
+    "six steps suits a single library or language feature; a broad field may",
+    "need eight or nine stages. Do not pad a short subject to look thorough,",
+    "and do not compress a wide one to look tidy: a step that covers three",
+    "unrelated things cannot be finished in one sitting, which is the only",
+    "test a step has to pass.",
     "",
     "WHAT A STEP IS",
     "One sitting of work. Something a person can finish in an evening and then",

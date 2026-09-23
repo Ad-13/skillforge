@@ -1,0 +1,235 @@
+:host {
+  display: block;
+  max-width: 54rem;
+  margin-inline: auto;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-4);
+}
+
+.crumbs a {
+  color: var(--ink-muted);
+}
+
+.crumbs a:hover {
+  color: var(--accent);
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
+}
+
+.head h1 {
+  margin-top: var(--space-2);
+}
+
+.lede {
+  margin-top: var(--space-2);
+  max-width: 44rem;
+  font-size: var(--text-sm);
+}
+
+.meta {
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* --- Messages --------------------------------------------------------- */
+
+.error,
+.notice {
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: var(--text-sm);
+}
+
+.error {
+  border-left: 2px solid var(--danger);
+  background: var(--danger-dim);
+  color: var(--danger);
+}
+
+.notice {
+  border-left: 2px solid var(--accent);
+  background: var(--accent-dim);
+}
+
+/* --- States ----------------------------------------------------------- */
+
+.state {
+  margin-top: var(--space-5);
+  text-align: center;
+}
+
+.state .panel-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  padding-block: var(--space-8);
+}
+
+.state sf-rune {
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.state p {
+  max-width: 32rem;
+}
+
+.wait {
+  font-size: var(--text-sm);
+}
+
+/* --- Steps ------------------------------------------------------------ */
+
+.steps {
+  list-style: none;
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.step {
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.step.is-complete {
+  border-color: var(--accent-line);
+}
+
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--dur) var(--ease-out);
+}
+
+.step-head:hover {
+  background: var(--surface-raised);
+}
+
+.step-box {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: grid;
+  place-items: center;
+  border: var(--hairline) solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+
+.step.is-complete .step-box {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.step-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.step-title {
+  font-weight: 500;
+}
+
+.step-summary {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.step-count {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.step-go {
+  font-family: var(--font-mono);
+  color: var(--ink-faint);
+  transition: color var(--dur) var(--ease-out);
+}
+
+.step-head:hover .step-go {
+  color: var(--accent);
+}
+
+/* --- Links ------------------------------------------------------------ */
+
+.links {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-5) var(--space-4);
+  margin-left: calc(1.15rem + var(--space-3));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-left: 2px solid var(--line);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.link-kind {
+  flex: 0 0 auto;
+  min-width: 3.6rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.link-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+.link-title:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

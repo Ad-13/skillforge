@@ -68,4 +68,14 @@ mapRouter.post(
   }),
 );
 
+mapRouter.post(
+  "/:lens/nodes/:nodeId/promote",
+  requireSession,
+  asyncHandler(async (req: Request, res: Response) => {
+    const session = sessionOf(req);
+    const result = await mapService.promote(session.userId, readNodeId(req));
+    res.status(201).json(result);
+  }),
+);
+
 export { mapRouter };

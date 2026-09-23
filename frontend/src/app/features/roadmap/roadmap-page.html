@@ -2,6 +2,8 @@
   <a routerLink="/">← All skills</a>
   <span class="faint">·</span>
   <a [routerLink]="['/skills', slug()]">Skill map</a>
+  <span class="faint">·</span>
+  <a [routerLink]="['/skills', slug(), 'resources']">Resources</a>
 </nav>
 
 <header class="head">
@@ -88,28 +90,42 @@
         [class.is-open]="isOpen(stage.id)"
         [style.--i]="i"
       >
-        <button
-          class="stage-head"
-          type="button"
-          [attr.aria-expanded]="isOpen(stage.id)"
-          [attr.aria-controls]="'stage-steps-' + stage.id"
-          (click)="toggleStage(stage.id)"
-        >
-          <span class="stage-number">{{ i + 1 }}</span>
+        <div class="stage-head">
+          <button
+            class="stage-toggle"
+            type="button"
+            [attr.aria-expanded]="isOpen(stage.id)"
+            [attr.aria-controls]="'stage-steps-' + stage.id"
+            (click)="toggleStage(stage.id)"
+          >
+            <span class="stage-number">{{ i + 1 }}</span>
 
-          <span class="stage-title">{{ stage.title }}</span>
+            <span class="stage-title">{{ stage.title }}</span>
 
-          <span class="stage-count">
-            <span class="stage-meter" aria-hidden="true">
-              <span class="stage-meter-fill" [style.width.%]="stagePercent(stage)"></span>
+            <span class="stage-count">
+              <span class="stage-meter" aria-hidden="true">
+                <span class="stage-meter-fill" [style.width.%]="stagePercent(stage)"></span>
+              </span>
+              <span class="stage-tally">{{ doneIn(stage) }}/{{ stage.steps.length }}</span>
             </span>
-            <span class="stage-tally">{{ doneIn(stage) }}/{{ stage.steps.length }}</span>
-          </span>
 
-          <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true">
-            <polyline points="4,6 8,10 12,6" />
-          </svg>
-        </button>
+            <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true">
+              <polyline points="4,6 8,10 12,6" />
+            </svg>
+          </button>
+
+          <a
+            class="stage-res"
+            [routerLink]="['/skills', slug(), 'stages', stage.id, 'resources']"
+            [attr.aria-label]="'Resources for ' + stage.title"
+          >
+            <svg class="book" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 2.5h4.2c.6 0 1 .4 1 1v10c0-.6-.4-1-1-1H3z" />
+              <path d="M13 2.5H8.8c-.6 0-1 .4-1 1v10c0-.6.4-1 1-1H13z" />
+            </svg>
+            <span>Resources</span>
+          </a>
+        </div>
 
         @if (isOpen(stage.id)) {
           <div class="stage-body">
@@ -120,7 +136,7 @@
 
           <ul class="steps" [id]="'stage-steps-' + stage.id">
             @for (step of stage.steps; track step.id) {
-              <li>
+              <li class="step-row">
                 <button
                   class="step"
                   type="button"
@@ -138,6 +154,17 @@
                     }
                   </span>
                 </button>
+
+                <a
+                  class="step-res"
+                  [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']"
+                  [attr.aria-label]="'Resources for ' + step.title"
+                >
+                  <svg class="book" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 2.5h4.2c.6 0 1 .4 1 1v10c0-.6-.4-1-1-1H3z" />
+                    <path d="M13 2.5H8.8c-.6 0-1 .4-1 1v10c0-.6.4-1 1-1H13z" />
+                  </svg>
+                </a>
               </li>
             }
           </ul>

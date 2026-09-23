@@ -5,6 +5,7 @@ import { requireBearer } from "../../middleware/requireBearer.ts";
 import { skillController } from "./skill.controller.ts";
 import { mapRouter } from "../maps/map.routes.ts";
 import { roadmapRouter } from "../roadmaps/roadmap.routes.ts";
+import { resourceRouter } from "../resources/resource.routes.ts";
 
 const internalRouter: Router = Router();
 
@@ -20,6 +21,7 @@ internalRouter.post(
 internalRouter.use("/:slug/maps", mapRouter);
 
 internalRouter.use("/:slug/roadmap", roadmapRouter);
+internalRouter.use("/:slug/resources", resourceRouter);
 
 internalRouter.get(
   "/:slug",

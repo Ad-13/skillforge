@@ -39,6 +39,7 @@
         [class.is-folded]="node.collapsed"
         [class.is-foldable]="canFold(node) && !node.collapsed"
         [class.is-pending]="pendingId() === node.id"
+        [class.is-promoting]="promotingId() === node.id"
         [class.is-terminal]="node.terminal"
         [style.left.px]="node.x"
         [style.top.px]="node.y"
@@ -88,6 +89,35 @@
 
         @if (node.summary) {
           <p class="node-summary">{{ node.summary }}</p>
+        }
+
+        @if (node.linked; as linked) {
+          <footer class="node-link" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+            @if (linked.totalSteps > 0) {
+              <span class="node-bar" [attr.aria-label]="percentOf(linked) + ' percent complete'">
+                <span class="node-bar-fill" [style.width.%]="percentOf(linked)"></span>
+              </span>
+              <span class="node-pct">{{ percentOf(linked) }}%</span>
+            } @else {
+              <span class="node-pct node-pct--none">no plan</span>
+            }
+
+            @if (node.depth > 0) {
+              <a class="node-go" [routerLink]="['/skills', linked.slug]">map</a>
+            }
+            <a class="node-go" [routerLink]="['/skills', linked.slug, 'roadmap']">plan</a>
+          </footer>
+        } @else if (node.depth > 0) {
+          <button
+            class="node-promote"
+            type="button"
+            [disabled]="promotingId() !== null"
+            [attr.aria-label]="'Add ' + node.label + ' as a skill of its own'"
+            (click)="onPromote($event, node)"
+            (keydown)="$event.stopPropagation()"
+          >
+            {{ promotingId() === node.id ? '···' : '+ skill' }}
+          </button>
         }
       </article>
     }

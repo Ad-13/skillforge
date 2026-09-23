@@ -1,0 +1,290 @@
+@if (workspace(); as ws) {
+  <nav class="crumbs">
+    <a routerLink="/">← All skills</a>
+    <span class="faint">·</span>
+    <a [routerLink]="['/skills', slug()]">{{ ws.skillName }}</a>
+    <span class="faint">·</span>
+    <a [routerLink]="['/skills', slug(), 'roadmap']">Plan</a>
+    <span class="faint">·</span>
+    <a [routerLink]="['/skills', slug(), 'stages', ws.stage.id, 'resources']">
+      {{ ws.stage.title }}
+    </a>
+  </nav>
+
+  <header class="head">
+    <div class="head-text">
+      <p class="eyebrow">Step resources</p>
+      <h1>{{ ws.step.title }}</h1>
+      @if (ws.step.summary) {
+        <p class="muted lede">{{ ws.step.summary }}</p>
+      }
+    </div>
+
+    <div class="head-actions">
+      <button
+        class="btn btn--quiet"
+        type="button"
+        [disabled]="!ws.previousStepId"
+        (click)="go(ws.previousStepId)"
+      >
+        ← Previous
+      </button>
+      <button
+        class="btn btn--quiet"
+        type="button"
+        [disabled]="!ws.nextStepId"
+        (click)="go(ws.nextStepId)"
+      >
+        Next →
+      </button>
+    </div>
+  </header>
+}
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+
+@if (notice()) {
+  <p class="notice" role="status">{{ notice() }}</p>
+}
+
+@if (missing()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune name="HAGALAZ" [size]="34" />
+      <h2>No such step</h2>
+      <p class="muted">
+        It may have been replaced — regenerating a plan creates new steps and drops the old ones.
+      </p>
+      <a class="btn btn--ghost" [routerLink]="['/skills', slug(), 'resources']">All resources</a>
+    </div>
+  </section>
+} @else if (loading()) {
+  <section class="panel state">
+    <div class="panel-body"><sf-rune-loader label="Reading the marks" /></div>
+  </section>
+} @else if (workspace(); as ws) {
+  <section class="block">
+    <header class="block-head">
+      <h2 class="block-title">Links</h2>
+      <div class="block-actions">
+        <button class="btn btn--quiet" type="button" (click)="openLinkEditor()">Add a link</button>
+        <button
+          class="btn btn--ghost"
+          type="button"
+          [disabled]="forging() || saving()"
+          (click)="forge()"
+        >
+          {{ forging() ? 'Searching…' : ws.links.length > 0 ? 'Find again' : 'Find links' }}
+        </button>
+      </div>
+    </header>
+
+    @if (forging()) {
+      <div class="pending"><sf-rune-loader [size]="24" label="Looking for material" /></div>
+    } @else if (ws.links.length === 0) {
+      <p class="empty faint">
+        Nothing yet. “Find links” asks a model for documentation and articles covering this step;
+        anything you add by hand survives regenerating.
+      </p>
+    } @else {
+      <ul class="links">
+        @for (link of ws.links; track link.id) {
+          <li class="link" [class.is-removing]="removingId() === link.id">
+            <span class="link-kind">{{ sourceLabel(link) }}</span>
+            <a
+              class="link-title"
+              [href]="hrefFor(link)"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ link.title }}
+            </a>
+            @if (!link.url) {
+              <span class="link-search faint" title="No address, so this searches">search</span>
+            }
+            @if (link.origin === 'USER') {
+              <span class="tag">mine</span>
+            }
+            <button
+              class="icon-btn"
+              type="button"
+              [disabled]="removingId() !== null"
+              [attr.aria-label]="'Remove ' + link.title"
+              (click)="remove(link)"
+            >
+              ×
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section class="block">
+    <header class="block-head">
+      <h2 class="block-title">Notes</h2>
+      <div class="block-actions">
+        <label class="btn btn--quiet import">
+          Import .md
+          <input
+            class="visually-hidden"
+            type="file"
+            accept=".md,.markdown,.txt,text/markdown,text/plain"
+            [disabled]="saving()"
+            (change)="importFile($event)"
+          />
+        </label>
+        <button
+          class="btn btn--primary"
+          type="button"
+          [disabled]="saving()"
+          (click)="openNoteEditor()"
+        >
+          Write a note
+        </button>
+      </div>
+    </header>
+
+    @if (ws.notes.length === 0) {
+      <p class="empty faint">
+        No notes yet. A note is Markdown — write one here, or import a file you already have.
+      </p>
+    } @else {
+      <ul class="notes">
+        @for (note of ws.notes; track note.id) {
+          <li class="note" [class.is-open]="isNoteOpen(note.id)">
+            <button
+              class="note-head"
+              type="button"
+              [attr.aria-expanded]="isNoteOpen(note.id)"
+              (click)="toggleNote(note.id)"
+            >
+              <span class="note-text">
+                <span class="note-title">{{ note.title }}</span>
+                @if (!isNoteOpen(note.id)) {
+                  <span class="note-preview faint">{{ preview(note) }}</span>
+                }
+              </span>
+              <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true">
+                <polyline points="4,6 8,10 12,6" />
+              </svg>
+            </button>
+
+            @if (isNoteOpen(note.id)) {
+              <div class="note-body">
+                <sf-markdown [source]="note.content ?? ''" />
+                <div class="note-actions">
+                  <button class="btn btn--quiet" type="button" (click)="openNoteEditor(note)">
+                    Edit
+                  </button>
+                  <button
+                    class="btn btn--quiet"
+                    type="button"
+                    [disabled]="removingId() !== null"
+                    (click)="remove(note)"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (editor(); as ed) {
+    @if (ed.mode === 'note') {
+      <section class="editor">
+        <h2 class="block-title">{{ ed.id ? 'Edit note' : 'New note' }}</h2>
+
+        <label class="field-label" for="note-title">Title</label>
+        <input
+          id="note-title"
+          class="field"
+          maxlength="200"
+          [ngModel]="ed.title"
+          (ngModelChange)="patchEditor({ title: $event })"
+        />
+
+        <label class="field-label" for="note-body">Body — Markdown</label>
+        <textarea
+          id="note-body"
+          class="field area"
+          rows="16"
+          [ngModel]="ed.content"
+          (ngModelChange)="patchEditor({ content: $event })"
+        ></textarea>
+
+        @if (ed.content.trim().length > 0) {
+          <details class="preview">
+            <summary>Preview</summary>
+            <sf-markdown [source]="ed.content" />
+          </details>
+        }
+
+        <div class="editor-actions">
+          <button
+            class="btn btn--primary"
+            type="button"
+            [disabled]="saving() || ed.title.trim().length === 0 || ed.content.trim().length === 0"
+            (click)="save()"
+          >
+            {{ saving() ? 'Saving…' : 'Save note' }}
+          </button>
+          <button class="btn btn--quiet" type="button" (click)="closeEditor()">Cancel</button>
+        </div>
+      </section>
+    } @else if (ed.mode === 'link') {
+      <section class="editor">
+        <h2 class="block-title">New link</h2>
+
+        <label class="field-label" for="link-title">Title</label>
+        <input
+          id="link-title"
+          class="field"
+          maxlength="200"
+          [ngModel]="ed.title"
+          (ngModelChange)="patchEditor({ title: $event })"
+        />
+
+        <label class="field-label" for="link-url">Address</label>
+        <input
+          id="link-url"
+          class="field"
+          type="url"
+          placeholder="https://…"
+          [ngModel]="ed.url"
+          (ngModelChange)="patchEditor({ url: $event })"
+        />
+
+        <label class="field-label" for="link-kind">Kind</label>
+        <select
+          id="link-kind"
+          class="field"
+          [ngModel]="ed.sourceType"
+          (ngModelChange)="patchEditor({ sourceType: $event })"
+        >
+          @for (type of sourceTypes; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select>
+
+        <div class="editor-actions">
+          <button
+            class="btn btn--primary"
+            type="button"
+            [disabled]="saving() || ed.title.trim().length === 0 || ed.url.trim().length === 0"
+            (click)="save()"
+          >
+            {{ saving() ? 'Saving…' : 'Save link' }}
+          </button>
+          <button class="btn btn--quiet" type="button" (click)="closeEditor()">Cancel</button>
+        </div>
+      </section>
+    }
+  }
+}

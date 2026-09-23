@@ -84,8 +84,17 @@ export interface MapNode {
   origin: string;
   expanded: boolean;
   expandedAt: string | null;
-  linkedSlug: string | null;
+  linked: LinkedSkill | null;
   children: MapNode[];
+}
+
+export interface LinkedSkill {
+  slug: string;
+  name: string;
+  hasRoadmap: boolean;
+  progress: number;
+  totalSteps: number;
+  completedSteps: number;
 }
 
 export interface SkillMap {
@@ -98,6 +107,12 @@ export interface SkillMap {
 
 export interface SkillMapResponse {
   map: SkillMap | null;
+}
+
+export interface PromoteResponse {
+  map: SkillMap;
+  skillSlug: string;
+  alsoLinked: number;
 }
 
 export interface ExpansionResponse {
@@ -138,6 +153,109 @@ export interface Roadmap {
 
 export interface RoadmapResponse {
   roadmap: Roadmap | null;
+}
+
+export interface Resource {
+  id: string;
+  kind: ResourceKind;
+  title: string;
+  url: string | null;
+  searchQuery: string | null;
+  sourceType: ResourceSourceType | null;
+  content: string | null;
+  origin: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ResourceKind = 'LINK' | 'NOTE';
+
+export type ResourceSourceType = 'DOCS' | 'ARTICLE' | 'VIDEO' | 'REPO' | 'COURSE';
+
+export interface ResourceStep {
+  id: string;
+  position: number;
+  title: string;
+  summary: string | null;
+  complete: boolean;
+  resources: Resource[];
+}
+
+export interface ResourceStage {
+  id: string;
+  position: number;
+  title: string;
+  rationale: string | null;
+  covered: number;
+  steps: ResourceStep[];
+}
+
+export interface SkillResources {
+  hasRoadmap: boolean;
+  stages: ResourceStage[];
+  general: Resource[];
+  total: number;
+}
+
+export interface ResourcesResponse {
+  resources: SkillResources;
+}
+
+export interface StageResourcesResponse {
+  stage: ResourceStage;
+}
+
+export interface StepWorkspace {
+  skillName: string;
+  skillSlug: string;
+  stage: { id: string; position: number; title: string; rationale: string | null };
+  step: { id: string; position: number; title: string; summary: string | null; complete: boolean };
+  previousStepId: string | null;
+  nextStepId: string | null;
+  links: Resource[];
+  notes: Resource[];
+}
+
+export interface StepWorkspaceResponse {
+  step: StepWorkspace;
+}
+
+export interface ForgeStepResourcesResponse {
+  step: StepWorkspace;
+  added: number;
+}
+
+export interface ResourceResponse {
+  resource: Resource;
+}
+
+export type CreateResourceInput =
+  | {
+      kind: 'LINK';
+      stepId: string | null;
+      title: string;
+      url: string;
+      sourceType: ResourceSourceType;
+    }
+  | { kind: 'NOTE'; stepId: string | null; title: string; content: string };
+
+export interface ImportNoteInput {
+  stepId: string | null;
+  filename: string;
+  content: string;
+  title?: string;
+}
+
+export interface UpdateResourceInput {
+  title?: string;
+  url?: string | null;
+  sourceType?: ResourceSourceType;
+  content?: string;
+}
+
+export interface ForgeResourcesResponse {
+  resources: SkillResources;
+  added: number;
 }
 
 export interface ForgeResponse {

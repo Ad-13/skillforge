@@ -18,6 +18,23 @@ export const routes: Routes = [
     loadComponent: () => import('./features/roadmap/roadmap-page').then((m) => m.RoadmapPage),
   },
   {
+    path: 'skills/:slug/resources',
+    title: 'Resources · SkillForge',
+    loadComponent: () => import('./features/resources/resources-page').then((m) => m.ResourcesPage),
+  },
+  {
+    path: 'skills/:slug/stages/:stageId/resources',
+    title: 'Stage resources · SkillForge',
+    loadComponent: () =>
+      import('./features/resources/stage-resources-page').then((m) => m.StageResourcesPage),
+  },
+  {
+    path: 'skills/:slug/steps/:stepId/resources',
+    title: 'Step resources · SkillForge',
+    loadComponent: () =>
+      import('./features/resources/step-resources-page').then((m) => m.StepResourcesPage),
+  },
+  {
     path: '**',
     redirectTo: '',
   },

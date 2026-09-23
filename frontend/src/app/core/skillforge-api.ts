@@ -4,9 +4,19 @@ import { firstValueFrom } from 'rxjs';
 import type {
   CreateSkillResponse,
   ExpansionResponse,
+  CreateResourceInput,
+  ForgeResourcesResponse,
   ForgeResponse,
+  ForgeStepResourcesResponse,
+  ImportNoteInput,
+  ResourceResponse,
+  ResourcesResponse,
+  StageResourcesResponse,
+  StepWorkspaceResponse,
+  UpdateResourceInput,
   RoadmapResponse,
   MeResponse,
+  PromoteResponse,
   SkillMapResponse,
   SkillResponse,
   SkillsResponse,
@@ -73,6 +83,92 @@ export class SkillForgeApi {
     return firstValueFrom(
       this.http.post<ExpansionResponse>(
         `/api/skills/${slug}/maps/${lens}/nodes/${nodeId}/expand`,
+        {},
+        this.options,
+      ),
+    );
+  }
+
+  getResources(slug: string): Promise<ResourcesResponse> {
+    return firstValueFrom(
+      this.http.get<ResourcesResponse>(`/api/skills/${slug}/resources`, this.options),
+    );
+  }
+
+  getStageResources(slug: string, stageId: string): Promise<StageResourcesResponse> {
+    return firstValueFrom(
+      this.http.get<StageResourcesResponse>(
+        `/api/skills/${slug}/resources/stages/${stageId}`,
+        this.options,
+      ),
+    );
+  }
+
+  getStepResources(slug: string, stepId: string): Promise<StepWorkspaceResponse> {
+    return firstValueFrom(
+      this.http.get<StepWorkspaceResponse>(
+        `/api/skills/${slug}/resources/steps/${stepId}`,
+        this.options,
+      ),
+    );
+  }
+
+  forgeStepResources(slug: string, stepId: string): Promise<ForgeStepResourcesResponse> {
+    return firstValueFrom(
+      this.http.post<ForgeStepResourcesResponse>(
+        `/api/skills/${slug}/resources/steps/${stepId}`,
+        {},
+        this.options,
+      ),
+    );
+  }
+
+  createResource(slug: string, input: CreateResourceInput): Promise<ResourceResponse> {
+    return firstValueFrom(
+      this.http.post<ResourceResponse>(`/api/skills/${slug}/resources`, input, this.options),
+    );
+  }
+
+  importNote(slug: string, input: ImportNoteInput): Promise<ResourceResponse> {
+    return firstValueFrom(
+      this.http.post<ResourceResponse>(`/api/skills/${slug}/resources/import`, input, this.options),
+    );
+  }
+
+  updateResource(
+    slug: string,
+    resourceId: string,
+    input: UpdateResourceInput,
+  ): Promise<ResourceResponse> {
+    return firstValueFrom(
+      this.http.patch<ResourceResponse>(
+        `/api/skills/${slug}/resources/${resourceId}`,
+        input,
+        this.options,
+      ),
+    );
+  }
+
+  forgeStageResources(slug: string, stageId: string): Promise<ForgeResourcesResponse> {
+    return firstValueFrom(
+      this.http.post<ForgeResourcesResponse>(
+        `/api/skills/${slug}/resources/stages/${stageId}`,
+        {},
+        this.options,
+      ),
+    );
+  }
+
+  deleteResource(slug: string, resourceId: string): Promise<void> {
+    return firstValueFrom(
+      this.http.delete<void>(`/api/skills/${slug}/resources/${resourceId}`, this.options),
+    );
+  }
+
+  promoteNode(slug: string, lens: string, nodeId: string): Promise<PromoteResponse> {
+    return firstValueFrom(
+      this.http.post<PromoteResponse>(
+        `/api/skills/${slug}/maps/${lens}/nodes/${nodeId}/promote`,
         {},
         this.options,
       ),

@@ -24,12 +24,30 @@
     type="submit"
     [disabled]="store.creating() || draft().trim().length === 0"
   >
-    {{ store.creating() ? 'Adding…' : 'Add skill' }}
+    {{ store.creating() ? 'Checking…' : 'Add skill' }}
   </button>
 </form>
 
 @if (store.error()) {
   <p class="error" role="alert">{{ store.error() }}</p>
+}
+
+@if (store.suggestion(); as suggestion) {
+  <div class="suggestion" role="status">
+    <p class="suggestion-text">
+      “{{ suggestion.from }}” is not a skill anyone can learn. Did you mean
+      <strong>{{ suggestion.name }}</strong>?
+    </p>
+    <p class="suggestion-reason faint">{{ suggestion.reason }}</p>
+    <div class="suggestion-actions">
+      <button class="btn btn--primary" type="button" (click)="accept()">
+        Yes, add {{ suggestion.name }}
+      </button>
+      <button class="btn btn--ghost" type="button" (click)="store.dismissSuggestion()">
+        No, I meant what I typed
+      </button>
+    </div>
+  </div>
 }
 
 @if (store.loading() && !store.loaded()) {
@@ -58,8 +76,8 @@
             <span class="row-name">{{ skill.name }}</span>
 
             <span class="row-tags">
-              @if (skill.hasMap) {
-                <span class="tag tag--accent">map</span>
+              @if (skill.mapLenses.length > 0) {
+                <span class="tag tag--accent">{{ skill.mapLenses.length }} of 3 maps</span>
               } @else {
                 <span class="tag">no map</span>
               }

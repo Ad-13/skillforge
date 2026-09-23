@@ -22,6 +22,8 @@ export interface Skill {
   source: string;
   learningLanguage: LearningLanguage;
   hasMap: boolean;
+  kind: SkillKind;
+  mapLenses: MapLens[];
   hasRoadmap: boolean;
   progress: number;
   totalSteps: number;
@@ -35,6 +37,12 @@ export interface Skill {
 export interface SkillsResponse {
   skills: Skill[];
 }
+
+export type SkillKind = 'TECHNOLOGY' | 'FIELD' | 'CONCEPT';
+
+export type CreateSkillResponse =
+  | { status: 'created'; skill: Skill }
+  | { status: 'suggestion'; suggestion: { name: string; reason: string } };
 
 export interface SkillResponse {
   skill: Skill;

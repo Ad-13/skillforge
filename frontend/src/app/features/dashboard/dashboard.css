@@ -193,3 +193,29 @@
     width: 5rem;
   }
 }
+
+/* --- Suggestion ------------------------------------------------------- */
+
+.suggestion {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: var(--hairline) solid var(--accent-line);
+  border-radius: var(--radius-lg);
+  background: var(--accent-dim);
+}
+
+.suggestion-text {
+  font-size: var(--text-base);
+}
+
+.suggestion-reason {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}

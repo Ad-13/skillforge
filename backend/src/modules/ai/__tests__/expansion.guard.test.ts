@@ -18,11 +18,16 @@ const context = (over: Partial<ExpansionContext> = {}): ExpansionContext => ({
   pathSlugs: ["react"],
   siblingSlugs: [],
   mapSlugs: ["react"],
+  targetIsRoot: true,
   ...over,
 });
 
 const labels = (children: readonly { label: string }[]): string[] =>
   children.map((c) => c.label);
+
+// ---------------------------------------------------------------------------
+// Cycles. The reason unlimited depth is safe.
+// ---------------------------------------------------------------------------
 
 test("a child that repeats the node being expanded is dropped", () => {
   const { accepted, rejected } = filterExpansion(
@@ -35,6 +40,10 @@ test("a child that repeats the node being expanded is dropped", () => {
 });
 
 test("a child anywhere on the path from the root is dropped", () => {
+  // React → JavaScript → ??? and the model answers "React". Three levels down
+  // this is a common answer, and it is exactly what would loop forever.
+  // Note the slug: canonicalise('The DOM') is 'dom', and the guard compares
+  // canonical slugs, so a path written with the raw spelling would not match.
   const ctx = context({
     targetSlug: "dom",
     pathSlugs: ["react", "javascript", "dom"],
@@ -52,6 +61,8 @@ test("a child anywhere on the path from the root is dropped", () => {
 });
 
 test("an unlimited chain stays finite because every level forbids the ones above", () => {
+  // Simulates walking down a chain: at each step the model tries to return
+  // everything it has already seen, and nothing gets through twice.
   const chain = ["react", "javascript", "dom", "html"];
   const names = ["React", "JavaScript", "The DOM", "HTML"];
 
@@ -70,6 +81,10 @@ test("an unlimited chain stays finite because every level forbids the ones above
     assert.equal(accepted.length, 0, `depth ${depth} let an ancestor through`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Duplicates.
+// ---------------------------------------------------------------------------
 
 test("two spellings of one skill in one answer collapse to one child", () => {
   const { accepted, rejected } = filterExpansion(
@@ -93,18 +108,41 @@ test("a child that is already listed under this node is dropped", () => {
   assert.match(rejected[0]!.reason, /already a child/);
 });
 
-test("a slug seen elsewhere in the map is kept, and flagged", () => {
+test("a slug already somewhere else in the map is dropped", () => {
+  // The case from the frontend map: HTML sat under the root, then appeared
+  // again under CSS and again under JavaScript. All three were true; only the
+  // first was useful, because a map is a curriculum and HTML is learned once.
   const ctx = context({
-    targetSlug: "rest",
-    pathSlugs: ["react", "rest"],
-    mapSlugs: ["react", "rest", "http"],
+    targetSlug: "javascript",
+    pathSlugs: ["frontend", "javascript"],
+    mapSlugs: ["frontend", "javascript", "html", "css"],
   });
 
-  const { accepted } = filterExpansion([child("HTTP")], ctx);
+  const { accepted, rejected } = filterExpansion(
+    [child("HTML"), child("CSS"), child("The DOM")],
+    ctx,
+  );
 
-  assert.equal(accepted.length, 1);
-  assert.equal(accepted[0]!.alreadyInMap, true);
+  assert.deepEqual(labels(accepted), ["The DOM"]);
+  assert.equal(rejected.length, 2);
+  for (const r of rejected) assert.match(r.reason, /already somewhere else/);
 });
+
+test("the first mention wins, wherever in the map it was", () => {
+  // Nothing about being a sibling, a cousin or an ancestor matters: one slug,
+  // one place.
+  const ctx = context({
+    targetSlug: "css",
+    pathSlugs: ["frontend", "css"],
+    mapSlugs: ["frontend", "css", "html"],
+  });
+  const { accepted } = filterExpansion([child("HTML")], ctx);
+  assert.equal(accepted.length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Canonicalisation and relations.
+// ---------------------------------------------------------------------------
 
 test("labels are stored canonically, not as the model wrote them", () => {
   const { accepted } = filterExpansion(

@@ -28,10 +28,26 @@ const LENS_BRIEF = {
   ANATOMY: [
     "You answer one question: what is the TARGET skill MADE OF?",
     "",
-    "- Name its own parts, subsystems and concepts — the things a person must",
-    "  learn inside TARGET in order to say they know it.",
-    "- Do not name things needed before TARGET, and do not name separate tools",
-    "  or libraries used alongside it.",
+    "What counts as a part depends on what TARGET is, and you are told which:",
+    "",
+    "- KIND = TECHNOLOGY (React, PostgreSQL, Docker)",
+    "  Name its internal concepts, subsystems and mechanisms — the things a",
+    "  person has to learn inside it. For React: JSX, components, hooks, state,",
+    "  context, reconciliation, effects, suspense, server components.",
+    "",
+    "- KIND = FIELD (frontend, DevOps, data engineering)",
+    "  A field is not made of concepts, it is made of TECHNOLOGIES AND AREAS.",
+    "  Name what somebody working in this field today actually has to know,",
+    "  including the frameworks and tools the job requires. For frontend that",
+    "  means HTML, CSS, JavaScript, TypeScript, a component framework, build",
+    "  tooling, testing, accessibility, performance — not a tour of browser",
+    "  trivia. Someone reading this list should recognise it as the shape of a",
+    "  job advertisement.",
+    "",
+    "- KIND = CONCEPT (recursion, REST)",
+    "  Often there is nothing worth splitting. Return an empty list rather than",
+    "  inventing subdivisions.",
+    "",
     "- Cover the subject properly. If TARGET has ten genuine parts, name ten;",
     "  naming four well-known ones and stopping is the failure mode here.",
     "- Mark a child RELATED when it is a corner of TARGET most people can",
@@ -50,6 +66,8 @@ const LENS_BRIEF = {
 } as const;
 
 export type LensName = keyof typeof LENS_BRIEF;
+
+export type SkillKindName = "TECHNOLOGY" | "FIELD" | "CONCEPT";
 
 const buildSystemPrompt = (lens: LensName, language: string): string => {
   const languageName = LANGUAGE_NAMES[language] ?? "English";
@@ -75,6 +93,7 @@ export interface ExpandInput {
   lens: LensName;
   targetName: string;
   goalName: string;
+  goalKind: SkillKindName;
   pathNames: readonly string[];
   language: string;
   context: ExpansionContext;
@@ -91,6 +110,7 @@ const buildUserPrompt = (
   const lines = [
     `TARGET: ${input.targetName}`,
     `GOAL (root of this map): ${input.goalName}`,
+    `KIND: ${input.context.targetIsRoot ? input.goalKind : "TECHNOLOGY"}`,
   ];
 
   if (input.pathNames.length > 0) {

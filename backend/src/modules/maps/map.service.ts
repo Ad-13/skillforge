@@ -150,6 +150,7 @@ export const mapService = {
         lens,
         targetName: skill.name,
         goalName: skill.name,
+        goalKind: skill.kind,
         pathNames: [],
         language: skill.learningLanguage,
         context: {
@@ -158,6 +159,7 @@ export const mapService = {
           pathSlugs: [skill.slug],
           siblingSlugs: [],
           mapSlugs: [skill.slug],
+          targetIsRoot: true,
         },
       },
       3,
@@ -218,6 +220,7 @@ export const mapService = {
       lens,
       targetName: node.label,
       goalName: skill.name,
+      goalKind: skill.kind,
       pathNames: [...node.ancestorSlugs, node.slug],
       language: skill.learningLanguage,
       context: {
@@ -226,6 +229,7 @@ export const mapService = {
         pathSlugs,
         siblingSlugs: siblings.slugs,
         mapSlugs,
+        targetIsRoot: node.parentId === null,
       },
     });
 

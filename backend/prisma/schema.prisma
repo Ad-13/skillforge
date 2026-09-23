@@ -39,6 +39,14 @@ enum MapLens {
   @@map("map_lens")
 }
 
+enum SkillKind {
+  TECHNOLOGY
+  FIELD
+  CONCEPT
+
+  @@map("skill_kind")
+}
+
 enum ContentOrigin {
   AI
   USER
@@ -83,11 +91,14 @@ model User {
 }
 
 model UserSkill {
-  id               String           @id @default(uuid()) @db.Uuid
-  userId           String           @map("user_id") @db.Uuid
-  name             String
-  slug             String
-  source           SkillSource      @default(MANUAL)
+  id     String      @id @default(uuid()) @db.Uuid
+  userId String      @map("user_id") @db.Uuid
+  name   String
+  slug   String
+  source SkillSource @default(MANUAL)
+
+  kind SkillKind @default(TECHNOLOGY)
+
   learningLanguage LearningLanguage @default(EN) @map("learning_language")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -107,48 +118,36 @@ model UserSkill {
 }
 
 model SkillMap {
-  id String @id @default(uuid()) @db.Uuid
-
-  userSkillId String @map("user_skill_id") @db.Uuid
-
-  lens MapLens
-
-  generatedAt DateTime @default(now()) @map("generated_at")
-
-  generatedBy String? @map("generated_by")
-
-  userSkill UserSkill      @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
-  nodes     SkillMapNode[]
+  id          String         @id @default(uuid()) @db.Uuid
+  userSkillId String         @map("user_skill_id") @db.Uuid
+  lens        MapLens
+  generatedAt DateTime       @default(now()) @map("generated_at")
+  generatedBy String?        @map("generated_by")
+  userSkill   UserSkill      @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
+  nodes       SkillMapNode[]
 
   @@unique([userSkillId, lens])
   @@map("skill_maps")
 }
 
 model SkillMapNode {
-  id         String @id @default(uuid()) @db.Uuid
-  skillMapId String @map("skill_map_id") @db.Uuid
-
-  parentId String? @map("parent_id") @db.Uuid
-
-  label String
-
-  slug String
+  id         String  @id @default(uuid()) @db.Uuid
+  skillMapId String  @map("skill_map_id") @db.Uuid
+  parentId   String? @map("parent_id") @db.Uuid
+  label      String
+  slug       String
 
   ancestorSlugs String[] @default([]) @map("ancestor_slugs")
 
-  summary  String?
-  relation NodeRelation?
-  origin   ContentOrigin @default(AI)
-  position Int           @default(0)
-
-  expandedAt DateTime? @map("expanded_at")
-
-  linkedUserSkillId String? @map("linked_user_skill_id") @db.Uuid
-
-  skillMap SkillMap @relation(fields: [skillMapId], references: [id], onDelete: Cascade)
-
-  parent   SkillMapNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children SkillMapNode[] @relation("NodeTree")
+  summary           String?
+  relation          NodeRelation?
+  origin            ContentOrigin  @default(AI)
+  position          Int            @default(0)
+  expandedAt        DateTime?      @map("expanded_at")
+  linkedUserSkillId String?        @map("linked_user_skill_id") @db.Uuid
+  skillMap          SkillMap       @relation(fields: [skillMapId], references: [id], onDelete: Cascade)
+  parent            SkillMapNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children          SkillMapNode[] @relation("NodeTree")
 
   linkedUserSkill UserSkill? @relation(fields: [linkedUserSkillId], references: [id], onDelete: SetNull)
 
@@ -159,16 +158,13 @@ model SkillMapNode {
 }
 
 model LearningRoadmap {
-  id          String @id @default(uuid()) @db.Uuid
-  userSkillId String @unique @map("user_skill_id") @db.Uuid
-
-  language LearningLanguage @default(EN)
-
-  generatedAt DateTime @default(now()) @map("generated_at")
-  generatedBy String?  @map("generated_by")
-
-  userSkill UserSkill       @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
-  stages    LearningStage[]
+  id          String           @id @default(uuid()) @db.Uuid
+  userSkillId String           @unique @map("user_skill_id") @db.Uuid
+  language    LearningLanguage @default(EN)
+  generatedAt DateTime         @default(now()) @map("generated_at")
+  generatedBy String?          @map("generated_by")
+  userSkill   UserSkill        @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
+  stages      LearningStage[]
 
   @@map("learning_roadmaps")
 }
@@ -177,8 +173,7 @@ model LearningStage {
   id        String @id @default(uuid()) @db.Uuid
   roadmapId String @map("roadmap_id") @db.Uuid
   position  Int
-
-  title String
+  title     String
 
   rationale String?
 
@@ -190,45 +185,35 @@ model LearningStage {
 }
 
 model LearningStep {
-  id       String @id @default(uuid()) @db.Uuid
-  stageId  String @map("stage_id") @db.Uuid
-  position Int
-
-  title   String
-  summary String?
-
-  completedAt DateTime? @map("completed_at")
-
-  stage     LearningStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  resources Resource[]
+  id          String        @id @default(uuid()) @db.Uuid
+  stageId     String        @map("stage_id") @db.Uuid
+  position    Int
+  title       String
+  summary     String?
+  completedAt DateTime?     @map("completed_at")
+  stage       LearningStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  resources   Resource[]
 
   @@index([stageId])
   @@map("learning_steps")
 }
 
 model Resource {
-  id          String       @id @default(uuid()) @db.Uuid
-  userSkillId String       @map("user_skill_id") @db.Uuid
-  stepId      String?      @map("step_id") @db.Uuid
+  id          String              @id @default(uuid()) @db.Uuid
+  userSkillId String              @map("user_skill_id") @db.Uuid
+  stepId      String?             @map("step_id") @db.Uuid
   kind        ResourceKind
   title       String
   url         String?
-
-  searchQuery String? @map("search_query")
-
-  sourceType ResourceSourceType? @map("source_type")
-
-  content String?
-
-  language LearningLanguage?
-  origin   ContentOrigin     @default(USER)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  userSkill UserSkill @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
-
-  step LearningStep? @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  searchQuery String?             @map("search_query")
+  sourceType  ResourceSourceType? @map("source_type")
+  content     String?
+  language    LearningLanguage?
+  origin      ContentOrigin       @default(USER)
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  userSkill   UserSkill           @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
+  step        LearningStep?       @relation(fields: [stepId], references: [id], onDelete: SetNull)
 
   @@index([userSkillId])
   @@index([stepId])

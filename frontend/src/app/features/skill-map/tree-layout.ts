@@ -4,6 +4,7 @@ import type { MapNode, NodeRelation } from '../../core/api.types';
 const ROOT_WIDTH = 190;
 const NODE_WIDTH = 218;
 const COLUMN_GAP = 62;
+
 const ROOT_HEIGHT = 74;
 const NODE_HEIGHT = 92;
 
@@ -30,6 +31,8 @@ export interface LaidOutNode {
   linkedSlug: string | null;
   expanded: boolean;
   terminal: boolean;
+  collapsed: boolean;
+  hiddenCount: number;
   depth: number;
   x: number;
   y: number;
@@ -53,10 +56,28 @@ export interface TreeLayout {
 
 const EMPTY: TreeLayout = { nodes: [], links: [], width: 0, height: 0 };
 
-export const layoutSkillMap = (root: MapNode | null): TreeLayout => {
+const countDescendants = (node: MapNode): number =>
+  node.children.reduce((total, child) => total + 1 + countDescendants(child), 0);
+
+const prune = (node: MapNode, collapsed: ReadonlySet<string>): MapNode =>
+  collapsed.has(node.id)
+    ? { ...node, children: [] }
+    : { ...node, children: node.children.map((child) => prune(child, collapsed)) };
+
+export const layoutSkillMap = (
+  root: MapNode | null,
+  collapsedIds: ReadonlySet<string> = new Set(),
+): TreeLayout => {
   if (!root) return EMPTY;
 
-  const rooted = hierarchy<MapNode>(root, (node) => node.children);
+  const hidden = new Map<string, number>();
+  const walk = (node: MapNode): void => {
+    if (collapsedIds.has(node.id)) hidden.set(node.id, countDescendants(node));
+    node.children.forEach(walk);
+  };
+  walk(root);
+
+  const rooted = hierarchy<MapNode>(prune(root, collapsedIds), (node) => node.children);
 
   const UNIT = 2;
 
@@ -71,7 +92,6 @@ export const layoutSkillMap = (root: MapNode | null): TreeLayout => {
   const positioned = layout(rooted);
 
   const all = positioned.descendants();
-
   const top = Math.min(...all.map((n) => n.x - heightAt(n.depth) / 2));
   const shift = PADDING - top;
 
@@ -83,7 +103,9 @@ export const layoutSkillMap = (root: MapNode | null): TreeLayout => {
     origin: n.data.origin,
     linkedSlug: n.data.linkedSlug,
     expanded: n.data.expanded,
-    terminal: n.data.expanded && n.data.children.length === 0,
+    terminal: n.data.expanded && !collapsedIds.has(n.data.id) && n.data.children.length === 0,
+    collapsed: collapsedIds.has(n.data.id),
+    hiddenCount: hidden.get(n.data.id) ?? 0,
     depth: n.depth,
     x: columnLeft(n.depth),
     y: n.x + shift - heightAt(n.depth) / 2,

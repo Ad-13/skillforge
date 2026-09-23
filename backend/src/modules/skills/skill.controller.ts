@@ -41,8 +41,14 @@ export const skillController = {
       throw new BadRequestError("Invalid skill payload", parsed.error.issues);
     }
 
-    const skill = await skillService.create(session.userId, parsed.data);
-    res.status(201).json({ skill });
+    const result = await skillService.create(session.userId, parsed.data);
+
+    if (result.status === "suggestion") {
+      res.status(200).json(result);
+      return;
+    }
+
+    res.status(201).json(result);
   },
 
   async importFromPeer(req: Request, res: Response): Promise<void> {

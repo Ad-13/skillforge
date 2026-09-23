@@ -36,6 +36,8 @@
         [class.is-active]="activeId() === node.id"
         [class.is-mine]="node.origin === 'USER'"
         [class.is-open]="canExpand(node)"
+        [class.is-folded]="node.collapsed"
+        [class.is-foldable]="canFold(node) && !node.collapsed"
         [class.is-pending]="pendingId() === node.id"
         [class.is-terminal]="node.terminal"
         [style.left.px]="node.x"
@@ -44,9 +46,16 @@
         [style.height.px]="node.height"
         [style.--i]="i"
         [attr.title]="node.summary"
-        [attr.role]="canExpand(node) ? 'button' : null"
+        [attr.role]="canExpand(node) || canFold(node) ? 'button' : null"
         [attr.tabindex]="node.depth === 0 ? -1 : 0"
-        [attr.aria-label]="canExpand(node) ? 'Open ' + node.label : node.label"
+        [attr.aria-expanded]="canFold(node) ? !node.collapsed : null"
+        [attr.aria-label]="
+          canExpand(node)
+            ? 'Open ' + node.label
+            : canFold(node)
+              ? (node.collapsed ? 'Unfold ' : 'Fold ') + node.label
+              : node.label
+        "
         (click)="onClick(node)"
         (keydown.enter)="onClick(node)"
         (keydown.space)="onClick(node)"
@@ -62,10 +71,14 @@
 
           <h3 class="node-label">{{ node.label }}</h3>
 
-          @if (node.origin === 'USER') {
-            <span class="node-mark" title="Added by you">+</span>
-          } @else if (pendingId() === node.id) {
+          @if (pendingId() === node.id) {
             <span class="node-mark node-mark--busy" aria-hidden="true">···</span>
+          } @else if (node.collapsed) {
+            <span class="node-mark node-mark--folded" aria-hidden="true"
+              >+{{ node.hiddenCount }}</span
+            >
+          } @else if (canFold(node)) {
+            <span class="node-mark node-mark--fold" aria-hidden="true">−</span>
           } @else if (node.terminal) {
             <span class="node-mark node-mark--end" title="Nothing further">·</span>
           } @else if (canExpand(node)) {

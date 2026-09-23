@@ -122,7 +122,6 @@
   background: var(--surface-raised);
   border-color: var(--rel, var(--accent));
   box-shadow: var(--shadow-raised);
-  transform: translate(2px, -2px);
 }
 
 .node[data-depth='0'] {
@@ -182,6 +181,37 @@
   color: var(--ink-faint);
 }
 
+/* --- Folding ---------------------------------------------------------- */
+
+.node.is-foldable,
+.node.is-folded {
+  cursor: pointer;
+}
+
+.node-mark--fold {
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+  transition: color var(--dur) var(--ease-out);
+}
+
+.node.is-foldable:hover .node-mark--fold {
+  color: var(--accent);
+}
+
+.node.is-folded {
+  border-right: 2px solid var(--rel, var(--line-strong));
+  background: var(--surface-raised);
+}
+
+.node-mark--folded {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 99px;
+  background: var(--accent-dim);
+}
+
 .node-mark--busy {
   color: var(--accent);
   animation: pulse-mark 1.1s ease-in-out infinite alternate;
@@ -214,7 +244,6 @@
   font-weight: 600;
   line-height: 1.25;
   min-width: 0;
-
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;

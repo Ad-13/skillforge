@@ -13,6 +13,8 @@ export class SkillsStore {
   readonly error = signal<string | null>(null);
   readonly loaded = signal(false);
 
+  readonly suggestion = signal<{ name: string; reason: string; from: string } | null>(null);
+
   readonly isEmpty = computed(() => this.loaded() && this.skills().length === 0);
 
   bySlug(slug: string): Skill | null {
@@ -47,9 +49,17 @@ export class SkillsStore {
 
     this.creating.set(true);
     this.error.set(null);
+    this.suggestion.set(null);
 
     try {
-      const { skill } = await this.api.addSkill(trimmed);
+      const response = await this.api.addSkill(trimmed);
+
+      if (response.status === 'suggestion') {
+        this.suggestion.set({ ...response.suggestion, from: trimmed });
+        return null;
+      }
+
+      const { skill } = response;
 
       this.skills.update((current) =>
         this.sorted([...current.filter((s) => s.slug !== skill.slug), skill]),
@@ -61,6 +71,18 @@ export class SkillsStore {
     } finally {
       this.creating.set(false);
     }
+  }
+
+  async acceptSuggestion(): Promise<Skill | null> {
+    const suggestion = this.suggestion();
+    if (!suggestion) return null;
+
+    this.suggestion.set(null);
+    return this.add(suggestion.name);
+  }
+
+  dismissSuggestion(): void {
+    this.suggestion.set(null);
   }
 
   async remove(slug: string): Promise<boolean> {

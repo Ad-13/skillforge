@@ -3,8 +3,9 @@ import {
   skillRepository,
   type UserSkillWithRoadmap,
 } from "./skill.repository.ts";
-import { NotFoundError } from "../../lib/errors.ts";
 import { canonicaliseOrThrow } from "../../lib/canonical.ts";
+import { identifySkill } from "../ai/identify.ts";
+import { BadRequestError, NotFoundError } from "../../lib/errors.ts";
 import { summariseProgress, type ProgressStage } from "../../lib/progress.ts";
 
 export const learningLanguageSchema = z.enum(["EN", "RU", "DE"]);
@@ -33,6 +34,7 @@ export interface SkillSummary {
   learningLanguage: string;
   hasMap: boolean;
   mapLenses: string[];
+  kind: string;
   hasRoadmap: boolean;
   progress: number;
   totalSteps: number;
@@ -42,6 +44,10 @@ export interface SkillSummary {
   lastActivityAt: string | null;
   createdAt: string;
 }
+
+export type CreateSkillResult =
+  | { status: "created"; skill: SkillSummary }
+  | { status: "suggestion"; suggestion: { name: string; reason: string } };
 
 export interface SkillDetail extends SkillSummary {
   stages: Array<{
@@ -71,6 +77,7 @@ const toSummary = (skill: UserSkillWithRoadmap): SkillSummary => {
     name: skill.name,
     slug: skill.slug,
     source: skill.source,
+    kind: skill.kind,
     learningLanguage: skill.learningLanguage,
     hasMap: skill.skillMaps.length > 0,
     mapLenses: skill.skillMaps.map((map) => map.lens),
@@ -117,17 +124,37 @@ export const skillService = {
     return toDetail(skill);
   },
 
-  async create(userId: string, input: CreateSkillInput): Promise<SkillSummary> {
-    const { name, slug } = canonicaliseOrThrow(input.name);
+  async create(
+    userId: string,
+    input: CreateSkillInput,
+  ): Promise<CreateSkillResult> {
+    canonicaliseOrThrow(input.name);
+
+    const identified = await identifySkill(input.name, "EN");
+
+    if (identified.verdict === "UNKNOWN") {
+      throw new BadRequestError(
+        identified.reason ||
+          `"${input.name}" does not name a skill anyone can learn.`,
+      );
+    }
+
+    if (identified.verdict === "CORRECTED") {
+      return {
+        status: "suggestion",
+        suggestion: { name: identified.name, reason: identified.reason },
+      };
+    }
 
     const skill = await skillRepository.upsertBySlug({
       userId,
-      name,
-      slug,
+      name: identified.name,
+      slug: identified.slug,
       source: "MANUAL",
+      kind: identified.kind ?? "TECHNOLOGY",
     });
 
-    return toSummary(skill);
+    return { status: "created", skill: toSummary(skill) };
   },
 
   async importFromPeer(

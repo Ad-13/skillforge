@@ -16,10 +16,11 @@ export class SkillTree {
   readonly rootSlug = input<string>('');
   readonly lens = input<MapLens>('FOUNDATION');
   readonly pendingId = input<string | null>(null);
-
   readonly expand = output<string>();
 
-  protected readonly layout = computed(() => layoutSkillMap(this.root()));
+  protected readonly layout = computed(() => layoutSkillMap(this.root(), this.collapsedIds()));
+
+  private readonly collapsedIds = signal<ReadonlySet<string>>(new Set());
 
   protected readonly rootRune = computed<RuneName>(() =>
     this.rootSlug() ? runeForSlug(this.rootSlug()) : 'ALGIZ',
@@ -37,6 +38,7 @@ export class SkillTree {
   });
 
   protected readonly lensRune = computed<RuneName>(() => RELATION_RUNE[this.lensRelation()]);
+
   protected readonly activeId = signal<string | null>(null);
 
   protected isActiveLink(linkId: string): boolean {
@@ -48,7 +50,23 @@ export class SkillTree {
     return node.depth > 0 && !node.expanded && this.pendingId() === null;
   }
 
+  protected canFold(node: LaidOutNode): boolean {
+    return node.expanded && (node.collapsed || node.hiddenCount > 0 || !node.terminal);
+  }
+
   protected onClick(node: LaidOutNode): void {
-    if (this.canExpand(node)) this.expand.emit(node.id);
+    if (this.canExpand(node)) {
+      this.expand.emit(node.id);
+      return;
+    }
+
+    if (!node.expanded) return;
+
+    this.collapsedIds.update((current) => {
+      const next = new Set(current);
+      if (next.has(node.id)) next.delete(node.id);
+      else next.add(node.id);
+      return next;
+    });
   }
 }

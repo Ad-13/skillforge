@@ -9,6 +9,7 @@ export interface ExpansionContext {
   pathSlugs: readonly string[];
   siblingSlugs: readonly string[];
   mapSlugs: readonly string[];
+  targetIsRoot: boolean;
 }
 
 export interface AcceptedChild {
@@ -16,7 +17,6 @@ export interface AcceptedChild {
   slug: string;
   summary: string;
   relation: GeneratedRelation;
-  alreadyInMap: boolean;
 }
 
 export interface RejectedChild {
@@ -89,6 +89,14 @@ export const filterExpansion = (
       continue;
     }
 
+    if (inMap.has(slug)) {
+      rejected.push({
+        label: child.label,
+        reason: "already somewhere else in this map",
+      });
+      continue;
+    }
+
     if (seen.has(slug)) {
       rejected.push({
         label: child.label,
@@ -103,7 +111,6 @@ export const filterExpansion = (
       slug,
       summary: child.summary,
       relation: relationFor(context.lens, child.relation),
-      alreadyInMap: inMap.has(slug),
     });
   }
 

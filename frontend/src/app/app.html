@@ -51,8 +51,7 @@
       <section class="panel gate">
         <div class="panel-body">
           <p class="eyebrow">Something went wrong</p>
-          <h1>The server did not answer.</h1>
-          <p class="muted gate-copy">{{ session.error() }}</p>
+          <h1>{{ session.error() }}</h1>
           <button class="btn btn--ghost gate-cta" type="button" (click)="retry()">
             Try again
           </button>

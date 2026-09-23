@@ -1,0 +1,4 @@
+CREATE TYPE "skill_kind" AS ENUM ('TECHNOLOGY', 'FIELD', 'CONCEPT');
+
+ALTER TABLE "user_skills"
+  ADD COLUMN "kind" "skill_kind" NOT NULL DEFAULT 'TECHNOLOGY';

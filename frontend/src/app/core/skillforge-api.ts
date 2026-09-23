@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import type {
+  CreateSkillResponse,
   ExpansionResponse,
   MeResponse,
   SkillMapResponse,
@@ -22,8 +23,10 @@ export class SkillForgeApi {
     return firstValueFrom(this.http.get<SkillsResponse>('/api/skills', this.options));
   }
 
-  addSkill(name: string): Promise<SkillResponse> {
-    return firstValueFrom(this.http.post<SkillResponse>('/api/skills', { name }, this.options));
+  addSkill(name: string): Promise<CreateSkillResponse> {
+    return firstValueFrom(
+      this.http.post<CreateSkillResponse>('/api/skills', { name }, this.options),
+    );
   }
 
   removeSkill(slug: string): Promise<void> {

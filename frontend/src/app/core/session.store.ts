@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { SkillForgeApi, isUnauthorized } from './skillforge-api';
+import { SkillForgeApi, describeHttpError, isUnauthorized } from './skillforge-api';
 import type { CurrentUser } from './api.types';
 
 export type SessionStatus = 'idle' | 'loading' | 'authenticated' | 'anonymous' | 'error';
@@ -35,9 +35,9 @@ export class SessionStore {
       this.status.set('authenticated');
     } catch (error: unknown) {
       this.user.set(null);
-
       this.status.set(isUnauthorized(error) ? 'anonymous' : 'error');
-      if (!isUnauthorized(error)) this.error.set('Could not reach the server.');
+
+      if (!isUnauthorized(error)) this.error.set(describeHttpError(error));
     }
   }
 }

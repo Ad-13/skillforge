@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma.ts";
 import type {
   LearningLanguage,
+  SkillKind,
   SkillSource,
 } from "../../generated/prisma/client.ts";
 
@@ -49,6 +50,7 @@ export const skillRepository = {
     name: string;
     slug: string;
     source: SkillSource;
+    kind?: SkillKind;
   }) {
     return prisma.userSkill.upsert({
       where: { userId_slug: { userId: input.userId, slug: input.slug } },
@@ -58,6 +60,7 @@ export const skillRepository = {
         name: input.name,
         slug: input.slug,
         source: input.source,
+        ...(input.kind ? { kind: input.kind } : {}),
       },
       include: withRoadmap,
     });

@@ -19,7 +19,6 @@ export class Dashboard implements OnInit {
   private readonly router = inject(Router);
 
   protected readonly draft = signal('');
-
   protected readonly runeFor = runeForSlug;
 
   ngOnInit(): void {
@@ -28,6 +27,11 @@ export class Dashboard implements OnInit {
 
   protected async submit(): Promise<void> {
     const skill = await this.store.add(this.draft());
+    if (skill) this.draft.set('');
+  }
+
+  protected async accept(): Promise<void> {
+    const skill = await this.store.acceptSuggestion();
     if (skill) this.draft.set('');
   }
 

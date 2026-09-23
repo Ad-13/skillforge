@@ -1,0 +1,99 @@
+<header class="intro">
+  <p class="eyebrow">Your forge</p>
+  <h1>Skills</h1>
+  <p class="muted intro-copy">
+    Add what you are learning. Each skill gets a map of what it stands on and what it is made
+    of, and a path through it.
+  </p>
+</header>
+
+<form class="add" (ngSubmit)="submit()">
+  <label class="visually-hidden" for="skill-name">Skill name</label>
+  <input
+    id="skill-name"
+    class="field"
+    name="skillName"
+    autocomplete="off"
+    maxlength="80"
+    placeholder="Angular, PostgreSQL, Docker…"
+    [ngModel]="draft()"
+    (ngModelChange)="draft.set($event)"
+  />
+  <button
+    class="btn btn--primary"
+    type="submit"
+    [disabled]="store.creating() || draft().trim().length === 0"
+  >
+    {{ store.creating() ? 'Adding…' : 'Add skill' }}
+  </button>
+</form>
+
+@if (store.error()) {
+  <p class="error" role="alert">{{ store.error() }}</p>
+}
+
+@if (store.loading() && !store.loaded()) {
+  <div class="pending">
+    <sf-rune-loader label="Gathering your skills" />
+  </div>
+} @else if (store.isEmpty()) {
+  <section class="panel empty">
+    <div class="panel-body">
+      <sf-rune name="FEHU" [size]="34" />
+      <h2>Nothing forged yet</h2>
+      <p class="muted">
+        Add your first skill above. Angular is a good one to start with if you want to see what
+        a generated map looks like.
+      </p>
+    </div>
+  </section>
+} @else {
+  <ul class="skills">
+    @for (skill of store.skills(); track skill.slug; let i = $index) {
+      <li class="stagger" [style.--i]="i">
+        <a class="row" [routerLink]="['/skills', skill.slug]">
+          <span class="row-rune"><sf-rune [name]="runeFor(skill.slug)" [size]="22" /></span>
+
+          <span class="row-main">
+            <span class="row-name">{{ skill.name }}</span>
+
+            <span class="row-tags">
+              @if (skill.hasMap) {
+                <span class="tag tag--accent">map</span>
+              } @else {
+                <span class="tag">no map</span>
+              }
+
+              @if (skill.source === 'CAREEROS') {
+                <span class="tag">from careeros</span>
+              }
+
+              @if (skill.highestCompletedStage) {
+                <span class="tag">{{ skill.highestCompletedStage }}</span>
+              }
+            </span>
+          </span>
+
+          <span class="row-progress" [attr.aria-label]="percent(skill) + ' percent complete'">
+            @if (skill.totalSteps > 0) {
+              <span class="bar"><span class="bar-fill" [style.width.%]="percent(skill)"></span></span>
+              <span class="bar-value">{{ percent(skill) }}%</span>
+            } @else {
+              <span class="bar-value faint">no plan yet</span>
+            }
+          </span>
+
+          <button
+            class="btn btn--quiet row-remove"
+            type="button"
+            [attr.aria-label]="'Remove ' + skill.name"
+            [disabled]="store.isBusy(skill.slug)"
+            (click)="remove($event, skill.slug)"
+          >
+            ×
+          </button>
+        </a>
+      </li>
+    }
+  </ul>
+}

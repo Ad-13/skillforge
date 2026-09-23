@@ -16,7 +16,7 @@ internalRouter.post(
   asyncHandler(skillController.importFromPeer),
 );
 
-internalRouter.use("/:slug/map", mapRouter);
+internalRouter.use("/:slug/maps", mapRouter);
 
 internalRouter.get(
   "/:slug",

@@ -1,11 +1,24 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
+import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    // withFetch() puts HttpClient on the native fetch API instead of the
-    // legacy XMLHttpRequest transport. This is the recommended setup.
+
+    provideZonelessChangeDetection(),
+
     provideHttpClient(withFetch()),
+
+    provideRouter(
+      routes,
+      withComponentInputBinding(),
+      withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
+    ),
   ],
 };

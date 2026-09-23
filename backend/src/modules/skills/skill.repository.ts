@@ -5,7 +5,7 @@ import type {
 } from "../../generated/prisma/client.ts";
 
 const withRoadmap = {
-  skillMap: { select: { id: true, generatedAt: true } },
+  skillMaps: { select: { lens: true, generatedAt: true } },
   roadmap: {
     include: {
       stages: {

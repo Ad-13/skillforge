@@ -1,0 +1,115 @@
+<nav class="crumbs">
+  <a routerLink="/">← All skills</a>
+</nav>
+
+<header class="head">
+  <div class="head-text">
+    <p class="eyebrow">Skill map</p>
+    <h1>{{ title() }}</h1>
+
+    @if (map(); as loaded) {
+      <p class="meta faint">
+        {{ loaded.nodeCount }} nodes
+        @if (generatedAt()) {
+          · started {{ generatedAt() }}
+        }
+        @if (loaded.generatedBy) {
+          · {{ loaded.generatedBy }}
+        }
+      </p>
+    }
+  </div>
+
+  @if (!missing() && map()) {
+    <button
+      class="btn btn--ghost"
+      type="button"
+      [disabled]="generating() || loading() || pendingNodeId() !== null"
+      (click)="generate()"
+    >
+      {{ generating() ? 'Forging…' : 'Start over' }}
+    </button>
+  }
+</header>
+
+@if (!missing()) {
+  <div class="lenses" role="tablist" aria-label="Which question this map answers">
+    @for (item of lenses; track item.lens) {
+      <button
+        class="lens"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="item.lens === lens().lens"
+        [class.is-current]="item.lens === lens().lens"
+        [disabled]="generating() || pendingNodeId() !== null"
+        (click)="selectLens(item)"
+      >
+        <span class="lens-title">{{ item.title }}</span>
+        <span class="lens-question">{{ item.question }}</span>
+      </button>
+    }
+  </div>
+}
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+
+@if (lastEmpty()) {
+  <p class="notice" role="status">{{ lastEmpty() }}</p>
+}
+
+@if (missing()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune name="HAGALAZ" [size]="34" />
+      <h2>No such skill</h2>
+      <p class="muted">
+        Nothing here answers to “{{ slug() }}”. It may have been removed in another tab.
+      </p>
+      <a class="btn btn--ghost" routerLink="/">Back to all skills</a>
+    </div>
+  </section>
+} @else if (generating()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune-loader [size]="30" label="Carving the first level" />
+      <p class="muted wait">
+        A language model is naming what belongs here. Everything below this level is generated
+        later, one node at a time, when you open it.
+      </p>
+    </div>
+  </section>
+} @else if (loading()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune-loader label="Reading the marks" />
+    </div>
+  </section>
+} @else if (map()?.root) {
+  <section class="panel tree-panel">
+    <div class="panel-body">
+      <sf-skill-tree
+        [root]="map()!.root"
+        [rootSlug]="slug()"
+        [lens]="lens().lens"
+        [pendingId]="pendingNodeId()"
+        (expand)="expand($event)"
+      />
+    </div>
+  </section>
+} @else {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune name="BERKANAN" [size]="34" />
+      <h2>{{ lens().question }}</h2>
+      <p class="muted">
+        Nothing is generated until you ask. This builds the first level only — every node after
+        that is opened by clicking it, so the map goes exactly as deep as you take it.
+      </p>
+      <button class="btn btn--primary" type="button" (click)="generate()">
+        Generate {{ lens().title.toLowerCase() }}
+      </button>
+    </div>
+  </section>
+}

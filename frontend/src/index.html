@@ -5,7 +5,31 @@
     <title>SkillForge</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Skill maps and learning paths, forged from what you are actually learning."
+    />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('skillforge:theme');
+          var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.dataset.theme =
+            stored === 'light' || stored === 'dark' ? stored : dark ? 'dark' : 'light';
+        } catch (_) {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <app-root></app-root>

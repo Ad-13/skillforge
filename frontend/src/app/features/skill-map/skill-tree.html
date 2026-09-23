@@ -1,0 +1,82 @@
+<div class="legend">
+  <span class="legend-item" [attr.data-relation]="lensRelation()">
+    <sf-rune [name]="lensRune()" [size]="14" />
+    <strong>Required</strong>
+  </span>
+  <span class="legend-item" data-relation="RELATED">
+    <sf-rune name="RAIDO" [size]="14" />
+    <strong>Helpful</strong>
+  </span>
+  <span class="legend-hint faint">Click any node to open what lies beneath it.</span>
+</div>
+
+<div class="scroller">
+  <div class="canvas" [style.width.px]="layout().width" [style.height.px]="layout().height">
+    <svg
+      class="links"
+      [attr.width]="layout().width"
+      [attr.height]="layout().height"
+      aria-hidden="true"
+      focusable="false"
+    >
+      @for (link of layout().links; track link.id) {
+        <path
+          [attr.d]="link.path"
+          [attr.data-relation]="link.relation"
+          [class.is-active]="isActiveLink(link.id)"
+        />
+      }
+    </svg>
+
+    @for (node of layout().nodes; track node.id; let i = $index) {
+      <article
+        class="node stagger"
+        [attr.data-depth]="node.depth === 0 ? 0 : 1"
+        [attr.data-relation]="node.relation"
+        [class.is-active]="activeId() === node.id"
+        [class.is-mine]="node.origin === 'USER'"
+        [class.is-open]="canExpand(node)"
+        [class.is-pending]="pendingId() === node.id"
+        [class.is-terminal]="node.terminal"
+        [style.left.px]="node.x"
+        [style.top.px]="node.y"
+        [style.width.px]="node.width"
+        [style.height.px]="node.height"
+        [style.--i]="i"
+        [attr.title]="node.summary"
+        [attr.role]="canExpand(node) ? 'button' : null"
+        [attr.tabindex]="node.depth === 0 ? -1 : 0"
+        [attr.aria-label]="canExpand(node) ? 'Open ' + node.label : node.label"
+        (click)="onClick(node)"
+        (keydown.enter)="onClick(node)"
+        (keydown.space)="onClick(node)"
+        (mouseenter)="activeId.set(node.id)"
+        (mouseleave)="activeId.set(null)"
+        (focus)="activeId.set(node.id)"
+        (blur)="activeId.set(null)"
+      >
+        <header class="node-head">
+          @if (node.depth === 0) {
+            <sf-rune [name]="rootRune()" [size]="17" />
+          }
+
+          <h3 class="node-label">{{ node.label }}</h3>
+
+          @if (node.origin === 'USER') {
+            <span class="node-mark" title="Added by you">+</span>
+          } @else if (pendingId() === node.id) {
+            <span class="node-mark node-mark--busy" aria-hidden="true">···</span>
+          } @else if (node.terminal) {
+            <span class="node-mark node-mark--end" title="Nothing further">·</span>
+          } @else if (canExpand(node)) {
+            <span class="node-mark node-mark--open" aria-hidden="true">+</span>
+          }
+        </header>
+
+        @if (node.summary) {
+          <p class="node-summary">{{ node.summary }}</p>
+        }
+      </article>
+    }
+  </div>
+</div>

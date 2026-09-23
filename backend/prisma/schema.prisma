@@ -7,10 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// ---------------------------------------------------------------------------
-// Enumerations
-// ---------------------------------------------------------------------------
-
 enum SkillSource {
   MANUAL
   CAREEROS
@@ -33,6 +29,14 @@ enum NodeRelation {
   RELATED
 
   @@map("node_relation")
+}
+
+enum MapLens {
+  FOUNDATION
+  ANATOMY
+  ECOSYSTEM
+
+  @@map("map_lens")
 }
 
 enum ContentOrigin {
@@ -59,10 +63,6 @@ enum ResourceSourceType {
   @@map("resource_source_type")
 }
 
-// ---------------------------------------------------------------------------
-// Identity
-// ---------------------------------------------------------------------------
-
 model User {
   id      String @id @default(uuid()) @db.Uuid
   authSub String @unique @map("auth_sub")
@@ -82,19 +82,12 @@ model User {
   @@map("users")
 }
 
-// ---------------------------------------------------------------------------
-// The core: one skill belonging to one person
-// ---------------------------------------------------------------------------
 model UserSkill {
-  id     String @id @default(uuid()) @db.Uuid
-  userId String @map("user_id") @db.Uuid
-
-  name String
-
-  slug String
-
-  source SkillSource @default(MANUAL)
-
+  id               String           @id @default(uuid()) @db.Uuid
+  userId           String           @map("user_id") @db.Uuid
+  name             String
+  slug             String
+  source           SkillSource      @default(MANUAL)
   learningLanguage LearningLanguage @default(EN) @map("learning_language")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -102,7 +95,7 @@ model UserSkill {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  skillMap  SkillMap?
+  skillMaps SkillMap[]
   roadmap   LearningRoadmap?
   resources Resource[]
 
@@ -113,14 +106,12 @@ model UserSkill {
   @@map("user_skills")
 }
 
-// ---------------------------------------------------------------------------
-// Skill map — what surrounds the skill
-// ---------------------------------------------------------------------------
-
 model SkillMap {
   id String @id @default(uuid()) @db.Uuid
 
-  userSkillId String @unique @map("user_skill_id") @db.Uuid
+  userSkillId String @map("user_skill_id") @db.Uuid
+
+  lens MapLens
 
   generatedAt DateTime @default(now()) @map("generated_at")
 
@@ -129,6 +120,7 @@ model SkillMap {
   userSkill UserSkill      @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
   nodes     SkillMapNode[]
 
+  @@unique([userSkillId, lens])
   @@map("skill_maps")
 }
 
@@ -138,11 +130,18 @@ model SkillMapNode {
 
   parentId String? @map("parent_id") @db.Uuid
 
-  label    String
+  label String
+
+  slug String
+
+  ancestorSlugs String[] @default([]) @map("ancestor_slugs")
+
   summary  String?
   relation NodeRelation?
   origin   ContentOrigin @default(AI)
   position Int           @default(0)
+
+  expandedAt DateTime? @map("expanded_at")
 
   linkedUserSkillId String? @map("linked_user_skill_id") @db.Uuid
 
@@ -155,12 +154,9 @@ model SkillMapNode {
 
   @@index([skillMapId])
   @@index([parentId])
+  @@index([skillMapId, slug])
   @@map("skill_map_nodes")
 }
-
-// ---------------------------------------------------------------------------
-// Roadmap — how to learn the skill
-// ---------------------------------------------------------------------------
 
 model LearningRoadmap {
   id          String @id @default(uuid()) @db.Uuid
@@ -210,21 +206,13 @@ model LearningStep {
   @@map("learning_steps")
 }
 
-// ---------------------------------------------------------------------------
-// Resources — links and notes
-// ---------------------------------------------------------------------------
-
 model Resource {
-  id String @id @default(uuid()) @db.Uuid
-
-  userSkillId String @map("user_skill_id") @db.Uuid
-
-  stepId String? @map("step_id") @db.Uuid
-
-  kind  ResourceKind
-  title String
-
-  url String?
+  id          String       @id @default(uuid()) @db.Uuid
+  userSkillId String       @map("user_skill_id") @db.Uuid
+  stepId      String?      @map("step_id") @db.Uuid
+  kind        ResourceKind
+  title       String
+  url         String?
 
   searchQuery String? @map("search_query")
 

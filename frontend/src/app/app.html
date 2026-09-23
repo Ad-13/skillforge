@@ -1,83 +1,78 @@
-<main class="page">
-  <header class="head">
-    <span class="badge">Angular</span>
-    <h1>SkillForge</h1>
-    <p class="sub">Skill graph and learning path</p>
-  </header>
+<header class="shell-head">
+  <div class="container head-row">
+    <a class="brand" routerLink="/">
+      <sf-rune name="ALGIZ" [size]="26" />
+      <span class="brand-name">SkillForge</span>
+    </a>
 
-  @if (loading()) {
-    <p class="muted">Loading…</p>
-  } @else if (!user()) {
-    <section class="card">
-      <p>You are not signed in.</p>
-      <a class="button" href="/auth/login">Sign in</a>
-    </section>
-  } @else {
-    <section class="card">
-      <p class="label">Signed in as</p>
-      <p class="name">{{ user()!.displayName ?? user()!.email }}</p>
+    <nav class="head-actions">
+      <button
+        class="btn btn--ghost theme-toggle"
+        type="button"
+        [attr.aria-label]="'Theme: ' + themeLabel() + '. Change.'"
+        (click)="theme.next()"
+      >
+        <sf-rune [name]="themeRune()" [size]="15" />
+        <span>{{ themeLabel() }}</span>
+      </button>
 
-      <p class="label">Subject id — issued by the identity provider</p>
-      <code class="sub-id">{{ user()!.sub }}</code>
-
-      <p class="label">Row id — created in our own database on first sign-in</p>
-      <code class="sub-id">{{ user()!.id }}</code>
-    </section>
-
-    <section class="card">
-      <h2>My skills</h2>
-      <p class="label">Stored in this application's PostgreSQL database</p>
-
-      <form class="row" (ngSubmit)="addSkill()">
-        <input
-          class="input"
-          name="skillName"
-          placeholder="Add a skill…"
-          maxlength="60"
-          [(ngModel)]="draftName"
-        />
-        <select class="input select" name="skillLevel" [(ngModel)]="draftLevel">
-          @for (level of levels; track level) {
-            <option [value]="level">{{ level.toLowerCase() }}</option>
-          }
-        </select>
-        <button class="button" type="submit" [disabled]="!canSubmit()">Add</button>
-      </form>
-
-      @if (error()) {
-        <p class="error">{{ error() }}</p>
+      @if (session.isAuthenticated()) {
+        <span class="who" [title]="session.user()!.sub">{{ session.displayName() }}</span>
+        <a class="btn btn--ghost" href="/auth/logout">Sign out</a>
+      } @else if (session.status() === 'anonymous') {
+        <a class="btn btn--primary" href="/auth/login">Sign in</a>
       }
+    </nav>
+  </div>
+</header>
 
-      @if (skills().length === 0) {
-        <p class="muted empty">Nothing yet — add your first skill above.</p>
-      } @else {
-        <ul class="list">
-          @for (skill of skills(); track skill.id) {
-            <li>
-              <span class="skill-name">{{ skill.name }}</span>
-              <span class="right">
-                <span class="pill">{{ skill.level.toLowerCase() }}</span>
-                <button
-                  class="icon"
-                  type="button"
-                  aria-label="Remove skill"
-                  (click)="removeSkill(skill.id)"
-                >
-                  ×
-                </button>
-              </span>
-            </li>
-          }
-        </ul>
-      }
-    </section>
-
-    <a class="link" href="/auth/logout">Sign out</a>
-  }
-
-  <footer class="foot">
-    @if (peerAppUrl()) {
-      <a [href]="peerAppUrl()">Open CareerOS →</a>
+<main class="container shell-main">
+  @switch (session.status()) {
+    @case ('authenticated') {
+      <router-outlet />
     }
-  </footer>
+
+    @case ('anonymous') {
+      <section class="panel gate">
+        <div class="panel-body">
+          <p class="eyebrow">Not signed in</p>
+          <h1>Forge what you are learning into a map.</h1>
+          <p class="muted gate-copy">
+            SkillForge keeps a map and a learning path for every skill you are working on.
+            Sign in with the shared account you use for CareerOS — the two applications share
+            one identity provider, so there is nothing new to register.
+          </p>
+          <a class="btn btn--primary gate-cta" href="/auth/login">Sign in</a>
+        </div>
+      </section>
+    }
+
+    @case ('error') {
+      <section class="panel gate">
+        <div class="panel-body">
+          <p class="eyebrow">Something went wrong</p>
+          <h1>The server did not answer.</h1>
+          <p class="muted gate-copy">{{ session.error() }}</p>
+          <button class="btn btn--ghost gate-cta" type="button" (click)="retry()">
+            Try again
+          </button>
+        </div>
+      </section>
+    }
+
+    @default {
+      <div class="boot">
+        <sf-rune-loader label="Reading the marks" />
+      </div>
+    }
+  }
 </main>
+
+<footer class="shell-foot">
+  <div class="container foot-row">
+    <span class="faint">Skill maps are generated, then yours to edit.</span>
+    @if (session.peerAppUrl()) {
+      <a [href]="session.peerAppUrl()">Open CareerOS →</a>
+    }
+  </div>
+</footer>

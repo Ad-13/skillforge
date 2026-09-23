@@ -1,0 +1,132 @@
+:host {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+}
+
+/* --- Header ---------------------------------------------------------- */
+
+.shell-head {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  border-bottom: var(--hairline) solid var(--line);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .shell-head {
+    background: var(--bg);
+  }
+}
+
+.head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 60px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand sf-rune {
+  color: var(--accent);
+  transition:
+    filter var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-snap);
+}
+
+.brand:hover sf-rune {
+  filter: drop-shadow(0 0 8px var(--accent-glow));
+  transform: translateY(-1px);
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.theme-toggle {
+  padding-inline: 0.7rem;
+}
+
+.theme-toggle sf-rune {
+  color: var(--accent);
+}
+
+.who {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 34rem) {
+  .who {
+    display: none;
+  }
+}
+
+/* --- Main ------------------------------------------------------------ */
+
+.shell-main {
+  padding-block: var(--space-7) var(--space-8);
+}
+
+.boot {
+  display: grid;
+  place-items: center;
+  min-height: 46vh;
+}
+
+.gate {
+  max-width: var(--reading-width);
+  margin-inline: auto;
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
+}
+
+.gate h1 {
+  margin-top: var(--space-2);
+}
+
+.gate-copy {
+  margin-top: var(--space-4);
+}
+
+.gate-cta {
+  margin-top: var(--space-5);
+}
+
+/* --- Footer ---------------------------------------------------------- */
+
+.shell-foot {
+  border-top: var(--hairline) solid var(--line);
+  padding-block: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.foot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}

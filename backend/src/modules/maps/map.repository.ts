@@ -1,108 +1,128 @@
 import crypto from "node:crypto";
 import { prisma } from "../../lib/prisma.ts";
-import type { GeneratedSkillMap } from "../ai/skillMap.schema.ts";
+import type { AcceptedChild, MapLensName } from "../ai/expansion.guard.ts";
 
-interface NodeRow {
-  id: string;
-  skillMapId: string;
-  parentId: string | null;
-  label: string;
-  summary: string | null;
-  relation: "PREREQUISITE" | "CORE" | "ECOSYSTEM" | "RELATED" | null;
-  origin: "AI";
-  position: number;
-}
-
-const flatten = (
-  map: GeneratedSkillMap,
-  skillMapId: string,
-): { rows: NodeRow[]; rootId: string } => {
-  const rootId = crypto.randomUUID();
-
-  const rows: NodeRow[] = [
-    {
-      id: rootId,
-      skillMapId,
-      parentId: null,
-      label: map.root.label,
-      summary: map.root.summary,
-      relation: null,
-      origin: "AI",
-      position: 0,
-    },
-  ];
-
-  map.children.forEach((child, childIndex) => {
-    const childId = crypto.randomUUID();
-
-    rows.push({
-      id: childId,
-      skillMapId,
-      parentId: rootId,
-      label: child.label,
-      summary: child.summary,
-      relation: child.relation,
-      origin: "AI",
-      position: childIndex,
-    });
-
-    child.children?.forEach((leaf, leafIndex) => {
-      rows.push({
-        id: crypto.randomUUID(),
-        skillMapId,
-        parentId: childId,
-        label: leaf.label,
-        summary: leaf.summary,
-        relation: leaf.relation,
-        origin: "AI",
-        position: leafIndex,
-      });
-    });
-  });
-
-  return { rows, rootId };
-};
+const nodeOrder = [{ position: "asc" as const }];
 
 export const mapRepository = {
-  findByUserSkillId(userSkillId: string) {
+  findByLens(userSkillId: string, lens: MapLensName) {
     return prisma.skillMap.findUnique({
-      where: { userSkillId },
-      include: {
-        nodes: { orderBy: [{ parentId: "asc" }, { position: "asc" }] },
-      },
+      where: { userSkillId_lens: { userSkillId, lens } },
+      include: { nodes: { orderBy: nodeOrder } },
     });
   },
 
-  async replaceGeneratedNodes(input: {
+  findNode(nodeId: string) {
+    return prisma.skillMapNode.findUnique({
+      where: { id: nodeId },
+      include: { skillMap: { include: { userSkill: true } } },
+    });
+  },
+
+  async resetToRoot(input: {
     userSkillId: string;
-    map: GeneratedSkillMap;
+    lens: MapLensName;
+    rootLabel: string;
+    rootSlug: string;
+    rootSummary: string | null;
     model: string;
   }) {
     return prisma.$transaction(async (tx) => {
       const skillMap = await tx.skillMap.upsert({
-        where: { userSkillId: input.userSkillId },
+        where: {
+          userSkillId_lens: {
+            userSkillId: input.userSkillId,
+            lens: input.lens,
+          },
+        },
         update: { generatedAt: new Date(), generatedBy: input.model },
-        create: { userSkillId: input.userSkillId, generatedBy: input.model },
+        create: {
+          userSkillId: input.userSkillId,
+          lens: input.lens,
+          generatedBy: input.model,
+        },
       });
 
-      await tx.skillMapNode.deleteMany({
-        where: { skillMapId: skillMap.id, origin: "AI" },
+      await tx.skillMapNode.deleteMany({ where: { skillMapId: skillMap.id } });
+
+      const root = await tx.skillMapNode.create({
+        data: {
+          skillMapId: skillMap.id,
+          parentId: null,
+          label: input.rootLabel,
+          slug: input.rootSlug,
+          ancestorSlugs: [],
+          summary: input.rootSummary,
+          relation: null,
+          origin: "AI",
+          position: 0,
+        },
       });
 
-      const { rows, rootId } = flatten(input.map, skillMap.id);
-      await tx.skillMapNode.createMany({ data: rows });
+      return { skillMap, root };
+    });
+  },
 
-      const orphans = await tx.skillMapNode.updateMany({
-        where: { skillMapId: skillMap.id, origin: "USER", parentId: null },
-        data: { parentId: rootId },
+  async saveExpansion(input: {
+    skillMapId: string;
+    parentId: string;
+    parentAncestors: readonly string[];
+    parentSlug: string;
+    children: readonly AcceptedChild[];
+    startPosition: number;
+  }) {
+    const rows = input.children.map((child, index) => ({
+      id: crypto.randomUUID(),
+      skillMapId: input.skillMapId,
+      parentId: input.parentId,
+      label: child.label,
+      slug: child.slug,
+      ancestorSlugs: [...input.parentAncestors, input.parentSlug],
+      summary: child.summary,
+      relation: child.relation,
+      origin: "AI" as const,
+      position: input.startPosition + index,
+    }));
+
+    return prisma.$transaction(async (tx) => {
+      if (rows.length > 0) await tx.skillMapNode.createMany({ data: rows });
+
+      await tx.skillMapNode.update({
+        where: { id: input.parentId },
+        data: { expandedAt: new Date() },
       });
 
       const nodes = await tx.skillMapNode.findMany({
-        where: { skillMapId: skillMap.id },
-        orderBy: [{ parentId: "asc" }, { position: "asc" }],
+        where: { skillMapId: input.skillMapId },
+        orderBy: nodeOrder,
       });
 
-      return { skillMap, nodes, reparentedCount: orphans.count };
+      return { nodes, added: rows.length };
     });
+  },
+
+  async slugsInMap(skillMapId: string): Promise<string[]> {
+    const rows = await prisma.skillMapNode.findMany({
+      where: { skillMapId },
+      select: { slug: true },
+    });
+    return rows.map((row) => row.slug);
+  },
+
+  async childrenOf(
+    parentId: string,
+  ): Promise<{ slugs: string[]; nextPosition: number }> {
+    const rows = await prisma.skillMapNode.findMany({
+      where: { parentId },
+      select: { slug: true, position: true },
+    });
+
+    return {
+      slugs: rows.map((row) => row.slug),
+      nextPosition: rows.reduce(
+        (max, row) => Math.max(max, row.position + 1),
+        0,
+      ),
+    };
   },
 };

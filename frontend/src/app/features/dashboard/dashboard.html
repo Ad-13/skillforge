@@ -82,6 +82,10 @@
                 <span class="tag">no map</span>
               }
 
+              @if (skill.hasRoadmap) {
+                <span class="tag tag--accent">plan</span>
+              }
+
               @if (skill.source === 'CAREEROS') {
                 <span class="tag">from careeros</span>
               }

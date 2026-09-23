@@ -105,3 +105,42 @@ export interface ExpansionResponse {
   added: number;
   rejected: number;
 }
+
+export interface RoadmapStep {
+  id: string;
+  position: number;
+  title: string;
+  summary: string | null;
+  completedAt: string | null;
+  complete: boolean;
+}
+
+export interface RoadmapStage {
+  id: string;
+  position: number;
+  title: string;
+  rationale: string | null;
+  complete: boolean;
+  steps: RoadmapStep[];
+}
+
+export interface Roadmap {
+  generatedAt: string;
+  generatedBy: string | null;
+  language: string;
+  stages: RoadmapStage[];
+  progress: number;
+  totalSteps: number;
+  completedSteps: number;
+  highestCompletedStage: string | null;
+  lastWorkedStage: string | null;
+}
+
+export interface RoadmapResponse {
+  roadmap: Roadmap | null;
+}
+
+export interface ForgeResponse {
+  roadmap: Roadmap;
+  added: string[];
+}

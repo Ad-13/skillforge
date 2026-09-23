@@ -1,0 +1,160 @@
+<nav class="crumbs">
+  <a routerLink="/">← All skills</a>
+  <span class="faint">·</span>
+  <a [routerLink]="['/skills', slug()]">Skill map</a>
+</nav>
+
+<header class="head">
+  <div class="head-text">
+    <p class="eyebrow">Learning plan</p>
+    <h1>{{ title() }}</h1>
+
+    @if (roadmap(); as plan) {
+      <p class="meta faint">
+        {{ plan.completedSteps }} of {{ plan.totalSteps }} steps
+        @if (generatedAt()) {
+          · forged {{ generatedAt() }}
+        }
+      </p>
+    }
+  </div>
+
+  @if (!missing() && roadmap()) {
+    <div class="head-actions">
+      <button class="btn btn--quiet" type="button" (click)="toggleAll()">
+        {{ allOpen() ? 'Collapse all' : 'Expand all' }}
+      </button>
+      <button
+        class="btn btn--ghost"
+        type="button"
+        [disabled]="forging() || loading()"
+        (click)="forge()"
+      >
+        {{ forging() ? 'Forging…' : 'Forge again' }}
+      </button>
+    </div>
+  }
+</header>
+
+@if (roadmap(); as plan) {
+  <div class="progress">
+    <div class="bar"><span class="bar-fill" [style.width.%]="percent()"></span></div>
+    <span class="bar-value">{{ percent() }}%</span>
+  </div>
+
+  @if (plan.lastWorkedStage) {
+    <p class="faint whereabouts">Last worked on: {{ plan.lastWorkedStage }}</p>
+  }
+}
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+
+@if (added().length > 0) {
+  <p class="notice" role="status">
+    Added {{ added().length }} topic(s) your map was missing: {{ added().join(', ') }}.
+  </p>
+}
+
+@if (missing()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune name="HAGALAZ" [size]="34" />
+      <h2>No such skill</h2>
+      <a class="btn btn--ghost" routerLink="/">Back to all skills</a>
+    </div>
+  </section>
+} @else if (forging()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune-loader [size]="30" label="Forging the plan" />
+      <p class="muted wait">
+        Three things happen here: the anatomy map is built if it does not exist, then checked for
+        topics it is missing, then turned into ordered stages. Half a minute is normal.
+      </p>
+    </div>
+  </section>
+} @else if (loading()) {
+  <section class="panel state">
+    <div class="panel-body"><sf-rune-loader label="Reading the marks" /></div>
+  </section>
+} @else if (roadmap(); as plan) {
+  <ol class="stages">
+    @for (stage of plan.stages; track stage.id; let i = $index) {
+      <li
+        class="stage stagger"
+        [class.is-complete]="stage.complete"
+        [class.is-open]="isOpen(stage.id)"
+        [style.--i]="i"
+      >
+        <button
+          class="stage-head"
+          type="button"
+          [attr.aria-expanded]="isOpen(stage.id)"
+          [attr.aria-controls]="'stage-steps-' + stage.id"
+          (click)="toggleStage(stage.id)"
+        >
+          <span class="stage-number">{{ i + 1 }}</span>
+
+          <span class="stage-title">{{ stage.title }}</span>
+
+          <span class="stage-count">
+            <span class="stage-meter" aria-hidden="true">
+              <span class="stage-meter-fill" [style.width.%]="stagePercent(stage)"></span>
+            </span>
+            <span class="stage-tally">{{ doneIn(stage) }}/{{ stage.steps.length }}</span>
+          </span>
+
+          <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true">
+            <polyline points="4,6 8,10 12,6" />
+          </svg>
+        </button>
+
+        @if (isOpen(stage.id)) {
+          <div class="stage-body">
+            @if (stage.rationale) {
+              <p class="stage-rationale muted">{{ stage.rationale }}</p>
+            }
+          </div>
+
+          <ul class="steps" [id]="'stage-steps-' + stage.id">
+            @for (step of stage.steps; track step.id) {
+              <li>
+                <button
+                  class="step"
+                  type="button"
+                  [class.is-complete]="step.complete"
+                  [class.is-pending]="pendingStepId() === step.id"
+                  [disabled]="pendingStepId() !== null"
+                  [attr.aria-pressed]="step.complete"
+                  (click)="toggle(step)"
+                >
+                  <span class="step-box" aria-hidden="true">{{ step.complete ? '✓' : '' }}</span>
+                  <span class="step-text">
+                    <span class="step-title">{{ step.title }}</span>
+                    @if (step.summary) {
+                      <span class="step-summary muted">{{ step.summary }}</span>
+                    }
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </li>
+    }
+  </ol>
+} @else {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune name="TIWAZ" [size]="34" />
+      <h2>No plan yet</h2>
+      <p class="muted">
+        Forging turns this skill's anatomy map into ordered stages with steps you can tick off.
+        If the map does not exist yet, it is built first.
+      </p>
+      <button class="btn btn--primary" type="button" (click)="forge()">Forge a plan</button>
+    </div>
+  </section>
+}

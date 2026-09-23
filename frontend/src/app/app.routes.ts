@@ -13,6 +13,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/skill-map/skill-map-page').then((m) => m.SkillMapPage),
   },
   {
+    path: 'skills/:slug/roadmap',
+    title: 'Learning plan · SkillForge',
+    loadComponent: () => import('./features/roadmap/roadmap-page').then((m) => m.RoadmapPage),
+  },
+  {
     path: '**',
     redirectTo: '',
   },

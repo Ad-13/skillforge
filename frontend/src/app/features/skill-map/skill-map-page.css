@@ -138,3 +138,9 @@
 .lens-question {
   font-size: var(--text-xs);
 }
+
+.head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

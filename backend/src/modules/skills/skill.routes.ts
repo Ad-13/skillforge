@@ -4,6 +4,7 @@ import { requireSession } from "../../middleware/requireSession.ts";
 import { requireBearer } from "../../middleware/requireBearer.ts";
 import { skillController } from "./skill.controller.ts";
 import { mapRouter } from "../maps/map.routes.ts";
+import { roadmapRouter } from "../roadmaps/roadmap.routes.ts";
 
 const internalRouter: Router = Router();
 
@@ -17,6 +18,8 @@ internalRouter.post(
 );
 
 internalRouter.use("/:slug/maps", mapRouter);
+
+internalRouter.use("/:slug/roadmap", roadmapRouter);
 
 internalRouter.get(
   "/:slug",

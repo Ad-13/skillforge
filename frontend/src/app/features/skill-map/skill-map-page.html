@@ -20,16 +20,24 @@
     }
   </div>
 
-  @if (!missing() && map()) {
-    <button
-      class="btn btn--ghost"
-      type="button"
-      [disabled]="generating() || loading() || pendingNodeId() !== null"
-      (click)="generate()"
-    >
-      {{ generating() ? 'Forging…' : 'Start over' }}
-    </button>
-  }
+  <div class="head-actions">
+    @if (!missing()) {
+      <a class="btn btn--primary" [routerLink]="['/skills', slug(), 'roadmap']">
+        {{ skill()?.hasRoadmap ? 'Open plan' : 'Forge a plan' }}
+      </a>
+    }
+
+    @if (!missing() && map()) {
+      <button
+        class="btn btn--ghost"
+        type="button"
+        [disabled]="generating() || loading() || pendingNodeId() !== null"
+        (click)="generate()"
+      >
+        {{ generating() ? 'Forging…' : 'Start over' }}
+      </button>
+    }
+  </div>
 </header>
 
 @if (!missing()) {
@@ -104,8 +112,8 @@
       <sf-rune name="BERKANAN" [size]="34" />
       <h2>{{ lens().question }}</h2>
       <p class="muted">
-        Nothing is generated until you ask. This builds the first level only — every node after
-        that is opened by clicking it, so the map goes exactly as deep as you take it.
+        Nothing is generated until you ask. This builds the first level only — every node after that
+        is opened by clicking it, so the map goes exactly as deep as you take it.
       </p>
       <button class="btn btn--primary" type="button" (click)="generate()">
         Generate {{ lens().title.toLowerCase() }}

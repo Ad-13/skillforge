@@ -4,6 +4,8 @@ import { firstValueFrom } from 'rxjs';
 import type {
   CreateSkillResponse,
   ExpansionResponse,
+  ForgeResponse,
+  RoadmapResponse,
   MeResponse,
   SkillMapResponse,
   SkillResponse,
@@ -42,6 +44,28 @@ export class SkillForgeApi {
   generateMap(slug: string, lens: string): Promise<SkillMapResponse> {
     return firstValueFrom(
       this.http.post<SkillMapResponse>(`/api/skills/${slug}/maps/${lens}`, {}, this.options),
+    );
+  }
+
+  getRoadmap(slug: string): Promise<RoadmapResponse> {
+    return firstValueFrom(
+      this.http.get<RoadmapResponse>(`/api/skills/${slug}/roadmap`, this.options),
+    );
+  }
+
+  forgeRoadmap(slug: string): Promise<ForgeResponse> {
+    return firstValueFrom(
+      this.http.post<ForgeResponse>(`/api/skills/${slug}/roadmap`, {}, this.options),
+    );
+  }
+
+  setStepComplete(slug: string, stepId: string, complete: boolean): Promise<RoadmapResponse> {
+    return firstValueFrom(
+      this.http.patch<RoadmapResponse>(
+        `/api/skills/${slug}/roadmap/steps/${stepId}`,
+        { complete },
+        this.options,
+      ),
     );
   }
 

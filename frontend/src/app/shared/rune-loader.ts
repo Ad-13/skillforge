@@ -1,6 +1,6 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
-import { Rune } from './rune';
-import { LOADER_RUNES } from './runes';
+import { Component, ChangeDetectionStrategy, input } from '@angular/core'
+import { Rune } from './rune'
+import { LOADER_RUNES } from './runes'
 
 @Component({
   selector: 'sf-rune-loader',
@@ -32,8 +32,6 @@ import { LOADER_RUNES } from './runes';
     }
 
     sf-rune {
-      /* Each rune's own highlight colour. Overridden per position below so the
-         wave shifts hue as it travels rather than flashing one flat cyan. */
       --pulse: var(--accent-bright);
       animation: rune-sweep var(--dur-sweep) var(--ease-out) infinite;
     }
@@ -56,8 +54,6 @@ import { LOADER_RUNES } from './runes';
       animation-delay: 480ms;
     }
 
-    /* Idle for most of the cycle, lit for a moment. The long tail is what
-       makes it read as one light passing rather than five blinking lamps. */
     @keyframes rune-sweep {
       0%,
       45%,
@@ -81,9 +77,6 @@ import { LOADER_RUNES } from './runes';
       color: var(--ink-faint);
     }
 
-    /* Without this the page would offer a permanently frozen row of glyphs and
-       no sign that anything is happening. A quiet opacity pulse says "working"
-       without any movement at all. */
     @media (prefers-reduced-motion: reduce) {
       sf-rune {
         animation: none;
@@ -103,8 +96,8 @@ import { LOADER_RUNES } from './runes';
   `,
 })
 export class RuneLoader {
-  readonly size = input(22);
-  readonly label = input('');
+  readonly size = input(22)
+  readonly label = input('')
 
-  protected readonly runes = LOADER_RUNES;
+  protected readonly runes = LOADER_RUNES
 }

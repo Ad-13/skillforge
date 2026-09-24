@@ -1,9 +1,9 @@
-export type RuneStroke = ReadonlyArray<readonly [number, number]>;
+export type RuneStroke = ReadonlyArray<readonly [number, number]>
 
 export interface RuneGlyph {
-  readonly name: string;
-  readonly meaning: string;
-  readonly strokes: ReadonlyArray<RuneStroke>;
+  readonly name: string
+  readonly meaning: string
+  readonly strokes: ReadonlyArray<RuneStroke>
 }
 
 export const RUNES = {
@@ -295,29 +295,35 @@ export const RUNES = {
       ],
     ],
   },
-} as const satisfies Record<string, RuneGlyph>;
+} as const satisfies Record<string, RuneGlyph>
 
-export type RuneName = keyof typeof RUNES;
+export type RuneName = keyof typeof RUNES
 
-const RUNE_NAMES = Object.keys(RUNES) as RuneName[];
+const RUNE_NAMES = Object.keys(RUNES) as RuneName[]
 
 export const RELATION_RUNE = {
   PREREQUISITE: 'ISA',
   CORE: 'TIWAZ',
   ECOSYSTEM: 'GEBO',
   RELATED: 'RAIDO',
-} as const satisfies Record<string, RuneName>;
+} as const satisfies Record<string, RuneName>
 
-export const LOADER_RUNES: readonly RuneName[] = ['ALGIZ', 'SOWILO', 'TIWAZ', 'KAUNAN', 'DAGAZ'];
+export const LOADER_RUNES: readonly RuneName[] = [
+  'ALGIZ',
+  'SOWILO',
+  'TIWAZ',
+  'KAUNAN',
+  'DAGAZ',
+]
 
 export const runeForSlug = (slug: string): RuneName => {
-  let hash = 0x811c9dc5;
+  let hash = 0x811c9dc5
   for (let i = 0; i < slug.length; i += 1) {
-    hash ^= slug.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
+    hash ^= slug.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
   }
-  return RUNE_NAMES[Math.abs(hash) % RUNE_NAMES.length] as RuneName;
-};
+  return RUNE_NAMES[Math.abs(hash) % RUNE_NAMES.length] as RuneName
+}
 
 export const strokeToPoints = (stroke: RuneStroke): string =>
-  stroke.map(([x, y]) => `${x},${y}`).join(' ');
+  stroke.map(([x, y]) => `${x},${y}`).join(' ')

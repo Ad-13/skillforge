@@ -1,0 +1,51 @@
+@switch (phase()) {
+  @case ('working') {
+    <section class="panel state">
+      <div class="panel-body">
+        <sf-rune-loader [size]="30" label="Taking them over" />
+        <h2>Adding {{ names().length }} skill(s) from CareerOS</h2>
+        @if (names().length > 0) {
+          <p class="muted list">{{ names().join(' · ') }}</p>
+        }
+        <p class="muted wait">
+          Nothing is generated here. Each one becomes a card you can open and build a map or a
+          plan for when you want to.
+        </p>
+      </div>
+    </section>
+  }
+
+  @case ('empty') {
+    <section class="panel state">
+      <div class="panel-body">
+        <sf-rune name="BERKANAN" [size]="34" />
+        <h2>Nothing came through</h2>
+        <p class="muted">
+          That link carried no skills. Open your own list and add what you are learning by hand.
+        </p>
+        <a class="btn btn--primary" routerLink="/">Go to my skills</a>
+      </div>
+    </section>
+  }
+
+  @case ('error') {
+    <section class="panel state">
+      <div class="panel-body">
+        <sf-rune name="HAGALAZ" [size]="34" />
+        <h2>{{ error() }}</h2>
+        <div class="actions">
+          <button class="btn btn--primary" type="button" (click)="retry()">Try again</button>
+          <a class="btn btn--ghost" routerLink="/">Go to my skills</a>
+        </div>
+      </div>
+    </section>
+  }
+
+  @default {
+    <section class="panel state">
+      <div class="panel-body">
+        <sf-rune-loader label="Opening your skills" />
+      </div>
+    </section>
+  }
+}

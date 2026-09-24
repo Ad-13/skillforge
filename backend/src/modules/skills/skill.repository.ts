@@ -1,56 +1,52 @@
-import { prisma } from "../../lib/prisma.ts";
-import type {
-  LearningLanguage,
-  SkillKind,
-  SkillSource,
-} from "../../generated/prisma/client.ts";
+import { prisma } from '../../lib/prisma.ts'
+import type { LearningLanguage, SkillKind, SkillSource } from '../../generated/prisma/client.ts'
 
 const withRoadmap = {
   skillMaps: { select: { lens: true, generatedAt: true } },
   roadmap: {
     include: {
       stages: {
-        orderBy: { position: "asc" },
-        include: { steps: { orderBy: { position: "asc" } } },
+        orderBy: { position: 'asc' },
+        include: { steps: { orderBy: { position: 'asc' } } },
       },
     },
   },
-} as const;
+} as const
 
 export type UserSkillWithRoadmap = NonNullable<
   Awaited<ReturnType<typeof skillRepository.findBySlug>>
->;
+>
 
 export const skillRepository = {
   listByUserId(userId: string) {
     return prisma.userSkill.findMany({
       where: { userId },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { updatedAt: 'desc' },
       include: withRoadmap,
-    });
+    })
   },
 
   listByAuthSub(sub: string) {
     return prisma.userSkill.findMany({
       where: { user: { authSub: sub } },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { updatedAt: 'desc' },
       include: withRoadmap,
-    });
+    })
   },
 
   findBySlug(userId: string, slug: string) {
     return prisma.userSkill.findUnique({
       where: { userId_slug: { userId, slug } },
       include: withRoadmap,
-    });
+    })
   },
 
   upsertBySlug(input: {
-    userId: string;
-    name: string;
-    slug: string;
-    source: SkillSource;
-    kind?: SkillKind;
+    userId: string
+    name: string
+    slug: string
+    source: SkillSource
+    kind?: SkillKind
   }) {
     return prisma.userSkill.upsert({
       where: { userId_slug: { userId: input.userId, slug: input.slug } },
@@ -63,46 +59,42 @@ export const skillRepository = {
         ...(input.kind ? { kind: input.kind } : {}),
       },
       include: withRoadmap,
-    });
+    })
   },
 
   listByIdsForUser(userId: string, ids: readonly string[]) {
     return prisma.userSkill.findMany({
       where: { userId, id: { in: [...ids] } },
       select: { id: true, slug: true, name: true },
-    });
+    })
   },
 
   listWithRoadmapByIdsForUser(userId: string, ids: readonly string[]) {
     return prisma.userSkill.findMany({
       where: { userId, id: { in: [...ids] } },
       include: withRoadmap,
-    });
+    })
   },
 
   async slugIndexForUser(userId: string): Promise<Map<string, string>> {
     const rows = await prisma.userSkill.findMany({
       where: { userId },
       select: { id: true, slug: true },
-    });
-    return new Map(rows.map((row) => [row.slug, row.id]));
+    })
+    return new Map(rows.map((row) => [row.slug, row.id]))
   },
 
-  setLanguage(
-    userId: string,
-    slug: string,
-    learningLanguage: LearningLanguage,
-  ) {
+  setLanguage(userId: string, slug: string, learningLanguage: LearningLanguage) {
     return prisma.userSkill.update({
       where: { userId_slug: { userId, slug } },
       data: { learningLanguage },
       include: withRoadmap,
-    });
+    })
   },
 
   deleteBySlug(userId: string, slug: string) {
     return prisma.userSkill.delete({
       where: { userId_slug: { userId, slug } },
-    });
+    })
   },
-};
+}

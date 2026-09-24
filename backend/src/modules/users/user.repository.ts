@@ -8,20 +8,7 @@ export interface UpsertFromIdentityInput {
   pictureUrl: string | null
 }
 
-/**
- * The repository is the only layer that knows Prisma exists. Services above
- * it speak in domain terms, so swapping the ORM — or adding a cache — never
- * reaches business logic.
- */
 export const userRepository = {
-  /**
-   * Just-in-time provisioning.
-   *
-   * There is no registration endpoint in this application: people register
-   * with the identity provider. The row appears here on the first successful
-   * login and is refreshed on every later one, which keeps the local
-   * projection of name and email current without any synchronisation job.
-   */
   async upsertFromIdentity(input: UpsertFromIdentityInput): Promise<User> {
     const now = new Date()
 

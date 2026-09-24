@@ -1,121 +1,193 @@
 <header class="intro">
   <p class="eyebrow">Your forge</p>
   <h1>Skills</h1>
-  <p class="muted intro-copy">
-    Add what you are learning. Each skill gets a map of what it stands on and what it is made
-    of, and a path through it.
-  </p>
 </header>
-
-<form class="add" (ngSubmit)="submit()">
-  <label class="visually-hidden" for="skill-name">Skill name</label>
-  <input
-    id="skill-name"
-    class="field"
-    name="skillName"
-    autocomplete="off"
-    maxlength="80"
-    placeholder="Angular, PostgreSQL, Docker…"
-    [ngModel]="draft()"
-    (ngModelChange)="draft.set($event)"
-  />
-  <button
-    class="btn btn--primary"
-    type="submit"
-    [disabled]="store.creating() || draft().trim().length === 0"
-  >
-    {{ store.creating() ? 'Checking…' : 'Add skill' }}
-  </button>
-</form>
-
-@if (store.error()) {
-  <p class="error" role="alert">{{ store.error() }}</p>
-}
-
-@if (store.suggestion(); as suggestion) {
-  <div class="suggestion" role="status">
-    <p class="suggestion-text">
-      “{{ suggestion.from }}” is not a skill anyone can learn. Did you mean
-      <strong>{{ suggestion.name }}</strong>?
-    </p>
-    <p class="suggestion-reason faint">{{ suggestion.reason }}</p>
-    <div class="suggestion-actions">
-      <button class="btn btn--primary" type="button" (click)="accept()">
-        Yes, add {{ suggestion.name }}
-      </button>
-      <button class="btn btn--ghost" type="button" (click)="store.dismissSuggestion()">
-        No, I meant what I typed
-      </button>
-    </div>
-  </div>
-}
 
 @if (store.loading() && !store.loaded()) {
   <div class="pending">
     <sf-rune-loader label="Gathering your skills" />
   </div>
-} @else if (store.isEmpty()) {
-  <section class="panel empty">
-    <div class="panel-body">
-      <sf-rune name="FEHU" [size]="34" />
-      <h2>Nothing forged yet</h2>
-      <p class="muted">
-        Add your first skill above. Angular is a good one to start with if you want to see what
-        a generated map looks like.
-      </p>
-    </div>
-  </section>
 } @else {
-  <ul class="skills">
-    @for (skill of store.skills(); track skill.slug; let i = $index) {
-      <li class="stagger" [style.--i]="i">
-        <a class="row" [routerLink]="['/skills', skill.slug]">
-          <span class="row-rune"><sf-rune [name]="runeFor(skill.slug)" [size]="22" /></span>
+  @if (all().length > 0) {
+    <section class="stats">
+      <div class="stat">
+        <span class="stat-value">{{ all().length }}</span>
+        <span class="stat-label">skills</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ active().length }}</span>
+        <span class="stat-label">in progress</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ finished().length }}</span>
+        <span class="stat-label">finished</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ doneSteps() }}<span class="stat-of">/{{ totalSteps() }}</span></span>
+        <span class="stat-label">steps done</span>
+      </div>
+      <div class="stat stat--bar">
+        <span class="bar"><span class="bar-fill" [style.width.%]="overall()"></span></span>
+        <span class="stat-label">{{ overall() }}% overall</span>
+      </div>
+    </section>
+  }
 
-          <span class="row-main">
-            <span class="row-name">{{ skill.name }}</span>
+  @if (resume(); as skill) {
+    <section class="resume">
+      <div class="resume-text">
+        <p class="eyebrow">Pick up where you left off</p>
+        <h2 class="resume-title">{{ skill.name }}</h2>
+        @if (skill.nextStep; as step) {
+          <p class="resume-step">
+            Next: <strong>{{ step.title }}</strong>
+            <span class="faint"> · {{ step.stageTitle }}</span>
+          </p>
+        }
+      </div>
+      <div class="resume-actions">
+        <a class="btn btn--primary" [routerLink]="['/skills', skill.slug, 'roadmap']">Open plan</a>
+        <a class="btn btn--ghost" [routerLink]="['/skills', skill.slug]">Map</a>
+      </div>
+    </section>
+  }
 
-            <span class="row-tags">
-              @if (skill.mapLenses.length > 0) {
-                <span class="tag tag--accent">{{ skill.mapLenses.length }} of 3 maps</span>
-              } @else {
-                <span class="tag">no map</span>
-              }
+  <form class="add" (ngSubmit)="submit()">
+    <label class="visually-hidden" for="skill-name">Skill name</label>
+    <input
+      id="skill-name"
+      class="field"
+      name="skillName"
+      autocomplete="off"
+      maxlength="80"
+      placeholder="Angular, PostgreSQL, Docker…"
+      [ngModel]="draft()"
+      (ngModelChange)="draft.set($event)"
+    />
+    <button
+      class="btn btn--primary"
+      type="submit"
+      [disabled]="store.creating() || draft().trim().length === 0"
+    >
+      {{ store.creating() ? 'Checking…' : 'Add skill' }}
+    </button>
+  </form>
 
-              @if (skill.hasRoadmap) {
-                <span class="tag tag--accent">plan</span>
-              }
+  @if (store.error()) {
+    <p class="error" role="alert">{{ store.error() }}</p>
+  }
 
-              @if (skill.source === 'CAREEROS') {
-                <span class="tag">from careeros</span>
-              }
+  @if (store.suggestion(); as suggestion) {
+    <div class="suggestion" role="status">
+      <p class="suggestion-text">
+        “{{ suggestion.from }}” is not a skill anyone can learn. Did you mean
+        <strong>{{ suggestion.name }}</strong>?
+      </p>
+      <p class="suggestion-reason faint">{{ suggestion.reason }}</p>
+      <div class="suggestion-actions">
+        <button class="btn btn--primary" type="button" (click)="accept()">
+          Yes, add {{ suggestion.name }}
+        </button>
+        <button class="btn btn--ghost" type="button" (click)="store.dismissSuggestion()">
+          No, I meant what I typed
+        </button>
+      </div>
+    </div>
+  }
 
-              @if (skill.highestCompletedStage) {
-                <span class="tag">{{ skill.highestCompletedStage }}</span>
-              }
-            </span>
-          </span>
-
-          <span class="row-progress" [attr.aria-label]="percent(skill) + ' percent complete'">
-            @if (skill.totalSteps > 0) {
-              <span class="bar"><span class="bar-fill" [style.width.%]="percent(skill)"></span></span>
-              <span class="bar-value">{{ percent(skill) }}%</span>
-            } @else {
-              <span class="bar-value faint">no plan yet</span>
-            }
-          </span>
-
-          <button
-            class="btn btn--quiet row-remove"
-            type="button"
-            [attr.aria-label]="'Remove ' + skill.name"
-            [disabled]="store.isBusy(skill.slug)"
-            (click)="remove($event, skill.slug)"
-          >
-            ×
-          </button>
-        </a>
-      </li>
-    }
-  </ul>
+  @if (store.isEmpty()) {
+    <section class="panel empty">
+      <div class="panel-body">
+        <sf-rune name="FEHU" [size]="34" />
+        <h2>Nothing forged yet</h2>
+        <p class="muted">
+          Add your first skill above. Angular is a good one to start with if you want to see what
+          a generated map looks like.
+        </p>
+      </div>
+    </section>
+  } @else {
+    <ng-container
+      [ngTemplateOutlet]="group"
+      [ngTemplateOutletContext]="{ title: 'In progress', list: active(), tone: 'accent' }"
+    />
+    <ng-container
+      [ngTemplateOutlet]="group"
+      [ngTemplateOutletContext]="{ title: 'Planned, not started', list: planned(), tone: 'plain' }"
+    />
+    <ng-container
+      [ngTemplateOutlet]="group"
+      [ngTemplateOutletContext]="{ title: 'No plan yet', list: untouched(), tone: 'plain' }"
+    />
+    <ng-container
+      [ngTemplateOutlet]="group"
+      [ngTemplateOutletContext]="{ title: 'Finished', list: finished(), tone: 'done' }"
+    />
+  }
 }
+
+<ng-template #group let-title="title" let-list="list" let-tone="tone">
+  @if (list.length > 0) {
+    <section class="group" [attr.data-tone]="tone">
+      <h2 class="group-title">
+        {{ title }}
+        <span class="group-count">{{ list.length }}</span>
+      </h2>
+
+      <ul class="skills">
+        @for (skill of list; track skill.slug; let i = $index) {
+          <li class="stagger" [style.--i]="i">
+            <a class="row" [routerLink]="['/skills', skill.slug]">
+              <span class="row-rune"><sf-rune [name]="runeFor(skill.slug)" [size]="22" /></span>
+
+              <span class="row-main">
+                <span class="row-name">
+                  {{ skill.name }}
+                  @if (isNew(skill)) {
+                    <span class="tag tag--accent">new</span>
+                  }
+                </span>
+
+                @if (skill.nextStep; as step) {
+                  <span class="row-next faint">Next: {{ step.title }}</span>
+                } @else {
+                  <span class="row-tags">
+                    @if (skill.mapLenses.length > 0) {
+                      <span class="tag">{{ skill.mapLenses.length }} of 3 maps</span>
+                    } @else {
+                      <span class="tag">no map</span>
+                    }
+                    @if (skill.source === 'CAREEROS') {
+                      <span class="tag">from careeros</span>
+                    }
+                  </span>
+                }
+              </span>
+
+              <span class="row-progress" [attr.aria-label]="percent(skill) + ' percent complete'">
+                @if (skill.totalSteps > 0) {
+                  <span class="bar">
+                    <span class="bar-fill" [style.width.%]="percent(skill)"></span>
+                  </span>
+                  <span class="bar-value">{{ percent(skill) }}%</span>
+                } @else {
+                  <span class="bar-value faint">no plan yet</span>
+                }
+              </span>
+
+              <button
+                class="btn btn--quiet row-remove"
+                type="button"
+                [attr.aria-label]="'Remove ' + skill.name"
+                [disabled]="store.isBusy(skill.slug)"
+                (click)="remove($event, skill.slug)"
+              >
+                ×
+              </button>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</ng-template>

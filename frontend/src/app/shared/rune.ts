@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, computed, input } from '@angular/core';
-import { RUNES, strokeToPoints, type RuneName } from './runes';
+import { Component, ChangeDetectionStrategy, computed, input } from '@angular/core'
+import { RUNES, strokeToPoints, type RuneName } from './runes'
 
 @Component({
   selector: 'sf-rune',
@@ -25,8 +25,6 @@ import { RUNES, strokeToPoints, type RuneName } from './runes';
 
     polyline {
       fill: none;
-      /* currentColor is what lets one component serve the loader, the lane
-         markers and the skill badge without a colour input. */
       stroke: currentColor;
       stroke-width: 1.25;
       stroke-linecap: round;
@@ -35,11 +33,11 @@ import { RUNES, strokeToPoints, type RuneName } from './runes';
   `,
 })
 export class Rune {
-  readonly name = input.required<RuneName>();
-  readonly size = input(18);
+  readonly name = input.required<RuneName>()
+  readonly size = input(18)
 
-  protected readonly height = computed(() => this.size());
-  protected readonly width = computed(() => Math.round((this.size() / 16) * 10));
+  protected readonly height = computed(() => this.size())
+  protected readonly width = computed(() => Math.round((this.size() / 16) * 10))
 
-  protected readonly strokes = computed(() => RUNES[this.name()].strokes.map(strokeToPoints));
+  protected readonly strokes = computed(() => RUNES[this.name()].strokes.map(strokeToPoints))
 }

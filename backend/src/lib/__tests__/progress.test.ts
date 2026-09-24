@@ -11,17 +11,12 @@ import {
 } from '../progress.ts'
 import { toSlug, toSlugOrThrow } from '../slug.ts'
 
-/** Builds a stage from a list of completion dates; `null` means "not done". */
 const stage = (title: string, completions: readonly (string | null)[]): ProgressStage => ({
   title,
   steps: completions.map((value) => ({
     completedAt: value === null ? null : new Date(value),
   })),
 })
-
-// ---------------------------------------------------------------------------
-// The worked example from the domain model, used as the reference case.
-// ---------------------------------------------------------------------------
 
 const angular: ProgressStage[] = [
   stage('Web and TypeScript Foundations', ['2026-09-14', '2026-09-14', '2026-09-15']),
@@ -49,13 +44,8 @@ test('"where was I" is the stage of the most recently completed step', () => {
   assert.equal(summary.lastActivityAt?.toISOString().slice(0, 10), '2026-09-18')
 })
 
-// ---------------------------------------------------------------------------
-// The edge cases that decide whether the formulas are right.
-// ---------------------------------------------------------------------------
-
 test('an empty stage does not count as complete', () => {
-  // [].every(...) is true by definition, so without an explicit length check a
-  // freshly generated roadmap would report itself finished.
+
   assert.equal(isStageComplete({ title: 'Empty', steps: [] }), false)
   assert.equal(progressOf([{ title: 'Empty', steps: [] }]), 0)
 })
@@ -67,8 +57,7 @@ test('an empty roadmap yields zero rather than a division by zero', () => {
 })
 
 test('finishing a later stage while skipping an earlier one still counts', () => {
-  // This is the whole point of having no locks: prior experience lets someone
-  // complete stage four and never open stage two.
+
   const jumper: ProgressStage[] = [
     stage('One', ['2026-09-01', null]),
     stage('Two', [null]),
@@ -80,9 +69,7 @@ test('finishing a later stage while skipping an earlier one still counts', () =>
 })
 
 test('the last worked stage follows time, not stage order', () => {
-  // The formula this replaced answered "the first incomplete stage with some
-  // progress" and would have said "One" here for the wrong reason — and
-  // "Three" in the mirrored case. Reading the timestamp removes the guesswork.
+
   const messy: ProgressStage[] = [
     stage('One', ['2026-09-20', null]),
     stage('Two', [null]),
@@ -92,10 +79,6 @@ test('the last worked stage follows time, not stage order', () => {
   assert.equal(lastWorkedStage(messy)?.title, 'One')
   assert.equal(highestCompletedStage(messy), null)
 })
-
-// ---------------------------------------------------------------------------
-// Slugs — the key half of the per-user uniqueness rule.
-// ---------------------------------------------------------------------------
 
 test('different spellings of one skill collapse to the same slug', () => {
   assert.equal(toSlug('  Angular  '), 'angular')
@@ -110,8 +93,7 @@ test('accented Latin is folded rather than dropped', () => {
 })
 
 test('input that cannot produce a slug is refused, not silently emptied', () => {
-  // An empty slug would collide with every other unslugifiable name and give
-  // the row a URL of "/skills/".
+
   assert.equal(toSlug('   '), '')
   assert.throws(() => toSlugOrThrow('Ангуляр'), /Latin letters/)
   assert.equal(toSlugOrThrow('Angular'), 'angular')

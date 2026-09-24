@@ -27,6 +27,7 @@
   justify-content: space-between;
   gap: var(--space-4);
   min-height: 60px;
+  padding-inline: var(--space-5);
 }
 
 .brand {
@@ -85,10 +86,186 @@
   }
 }
 
-/* --- Main ------------------------------------------------------------ */
+/* --- Body: rail and main --------------------------------------------- */
+
+.shell-body {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  align-items: start;
+  width: 100%;
+  max-width: calc(var(--content-width) + 15rem);
+  margin-inline: auto;
+  padding-inline: var(--space-5);
+  gap: var(--space-6);
+}
+
+.rail {
+  position: sticky;
+  top: calc(60px + var(--space-6));
+  padding-block: var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
+}
+
+.rail-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rail-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition:
+    color var(--dur) var(--ease-out),
+    background-color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out);
+}
+
+.rail-link sf-rune {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  transition: color var(--dur) var(--ease-out);
+}
+
+.rail-link:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.rail-link.is-current {
+  color: var(--ink);
+  background: var(--accent-dim);
+  border-left-color: var(--accent);
+}
+
+.rail-link.is-current sf-rune {
+  color: var(--accent);
+}
+
+.rail-group {
+  margin: var(--space-4) 0 var(--space-2);
+  padding-inline: var(--space-3);
+}
+
+.rail-group-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.rail-skills {
+  border-top: var(--hairline) solid var(--line);
+  padding-top: var(--space-2);
+}
+
+.rail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rail-skill {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition:
+    color var(--dur) var(--ease-out),
+    background-color var(--dur) var(--ease-out);
+}
+
+.rail-skill:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.rail-skill.is-current {
+  color: var(--accent);
+}
+
+.rail-skill-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-skill-pct {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+}
 
 .shell-main {
+  min-width: 0;
   padding-block: var(--space-7) var(--space-8);
+}
+
+.shell-main--plain {
+  width: 100%;
+  max-width: var(--content-width);
+  margin-inline: auto;
+  padding-inline: var(--space-5);
+}
+
+@media (max-width: 64rem) {
+  .shell-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .rail {
+    position: static;
+    padding-block: var(--space-5) 0;
+    border-bottom: var(--hairline) solid var(--line);
+  }
+
+  .rail-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .rail-link {
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .rail-link.is-current {
+    border-left-color: transparent;
+    border-bottom-color: var(--accent);
+  }
+
+  .rail-group {
+    width: 100%;
+    margin-block: var(--space-3) 0;
+  }
+
+  .rail-skills {
+    display: none;
+  }
 }
 
 .boot {
@@ -129,4 +306,8 @@
   justify-content: space-between;
   gap: var(--space-4);
   flex-wrap: wrap;
+  width: 100%;
+  max-width: calc(var(--content-width) + 15rem);
+  margin-inline: auto;
+  padding-inline: var(--space-5);
 }

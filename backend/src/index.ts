@@ -3,7 +3,7 @@ import { env } from './config/env.ts'
 import { disconnectPrisma, prisma } from './lib/prisma.ts'
 
 const start = async (): Promise<void> => {
-  // Fail loudly at boot rather than on a user's first request.
+
   await prisma.$queryRaw`SELECT 1`
   console.log('[skillforge] database reachable')
 

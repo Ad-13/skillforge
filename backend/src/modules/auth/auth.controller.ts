@@ -8,16 +8,15 @@ import {
   writeSession,
   writeTransaction,
 } from '../../lib/session.ts'
+import { sanitiseReturnTo } from '../../lib/return-to.ts'
 import { authService } from './auth.service.ts'
 
 export const authController = {
-  async login(_req: Request, res: Response): Promise<void> {
+  async login(req: Request, res: Response): Promise<void> {
     const { transaction, authorizationUrl } = authService.beginLogin()
+    const returnTo = sanitiseReturnTo(req.query['returnTo'])
 
-    // The three secrets travel in a short-lived encrypted cookie rather
-    // than in server memory, so the login still completes after a restart
-    // or on a different instance behind a load balancer.
-    await writeTransaction(res, transaction)
+    await writeTransaction(res, returnTo ? { ...transaction, returnTo } : transaction)
 
     res.redirect(authorizationUrl)
   },
@@ -39,7 +38,8 @@ export const authController = {
     const session = await authService.completeLogin(code, transaction)
     await writeSession(res, session)
 
-    res.redirect(env.BASE_URL)
+    const returnTo = sanitiseReturnTo(transaction.returnTo)
+    res.redirect(returnTo ? `${env.BASE_URL}${returnTo}` : env.BASE_URL)
   },
 
   logout(_req: Request, res: Response): void {

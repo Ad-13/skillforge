@@ -1,5 +1,5 @@
 <header class="shell-head">
-  <div class="container head-row">
+  <div class="head-row">
     <a class="brand" routerLink="/">
       <sf-rune name="ALGIZ" [size]="26" />
       <span class="brand-name">SkillForge</span>
@@ -20,19 +20,89 @@
         <span class="who" [title]="session.user()!.sub">{{ session.displayName() }}</span>
         <a class="btn btn--ghost" href="/auth/logout">Sign out</a>
       } @else if (session.status() === 'anonymous') {
-        <a class="btn btn--primary" href="/auth/login">Sign in</a>
+        <a class="btn btn--primary" [href]="signInHref()">Sign in</a>
       }
     </nav>
   </div>
 </header>
 
-<main class="container shell-main">
-  @switch (session.status()) {
-    @case ('authenticated') {
-      <router-outlet />
-    }
+@switch (session.status()) {
+  @case ('authenticated') {
+    <div class="shell-body">
+      <aside class="rail">
+        <nav class="rail-nav" aria-label="Sections">
+          <a
+            class="rail-link"
+            routerLink="/"
+            routerLinkActive="is-current"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <sf-rune name="FEHU" [size]="15" />
+            <span>My skills</span>
+          </a>
 
-    @case ('anonymous') {
+          @if (activeSlug(); as slug) {
+            <p class="rail-group">
+              <span class="rail-group-label">{{ activeName() }}</span>
+            </p>
+
+            <a class="rail-link" [routerLink]="['/skills', slug]" routerLinkActive="is-current"
+               [routerLinkActiveOptions]="{ exact: true }">
+              <sf-rune name="ALGIZ" [size]="15" />
+              <span>Skill map</span>
+            </a>
+
+            <a
+              class="rail-link"
+              [routerLink]="['/skills', slug, 'roadmap']"
+              routerLinkActive="is-current"
+            >
+              <sf-rune name="TIWAZ" [size]="15" />
+              <span>Plan</span>
+            </a>
+
+            <a
+              class="rail-link"
+              [routerLink]="['/skills', slug, 'resources']"
+              routerLinkActive="is-current"
+            >
+              <sf-rune name="BERKANAN" [size]="15" />
+              <span>Resources</span>
+            </a>
+          }
+        </nav>
+
+        @if (skills.skills().length > 0) {
+          <div class="rail-skills">
+            <p class="rail-group"><span class="rail-group-label">Jump to</span></p>
+            <ul class="rail-list">
+              @for (skill of skills.skills().slice(0, 8); track skill.slug) {
+                <li>
+                  <a
+                    class="rail-skill"
+                    [routerLink]="['/skills', skill.slug]"
+                    [class.is-current]="skill.slug === activeSlug()"
+                  >
+                    <span class="rail-skill-name">{{ skill.name }}</span>
+                    @if (skill.totalSteps > 0) {
+                      <span class="rail-skill-pct">{{ pct(skill) }}%</span>
+                    }
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </aside>
+
+      <main class="shell-main">
+        <router-outlet />
+      </main>
+    </div>
+  }
+
+  @case ('anonymous') {
+    <main class="shell-main shell-main--plain">
       <section class="panel gate">
         <div class="panel-body">
           <p class="eyebrow">Not signed in</p>
@@ -42,12 +112,14 @@
             Sign in with the shared account you use for CareerOS — the two applications share
             one identity provider, so there is nothing new to register.
           </p>
-          <a class="btn btn--primary gate-cta" href="/auth/login">Sign in</a>
+          <a class="btn btn--primary gate-cta" [href]="signInHref()">Sign in</a>
         </div>
       </section>
-    }
+    </main>
+  }
 
-    @case ('error') {
+  @case ('error') {
+    <main class="shell-main shell-main--plain">
       <section class="panel gate">
         <div class="panel-body">
           <p class="eyebrow">Something went wrong</p>
@@ -57,18 +129,20 @@
           </button>
         </div>
       </section>
-    }
+    </main>
+  }
 
-    @default {
+  @default {
+    <main class="shell-main shell-main--plain">
       <div class="boot">
         <sf-rune-loader label="Reading the marks" />
       </div>
-    }
+    </main>
   }
-</main>
+}
 
 <footer class="shell-foot">
-  <div class="container foot-row">
+  <div class="foot-row">
     <span class="faint">Skill maps are generated, then yours to edit.</span>
     @if (session.peerAppUrl()) {
       <a [href]="session.peerAppUrl()">Open CareerOS →</a>

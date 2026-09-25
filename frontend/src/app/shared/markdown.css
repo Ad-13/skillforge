@@ -1,6 +1,8 @@
+/* --- Base ------------------------------------------------------------- */
+
 .md {
   font-size: var(--text-base);
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--ink);
   overflow-wrap: break-word;
 }
@@ -13,110 +15,402 @@
   margin-bottom: 0;
 }
 
+/* --- Headings --------------------------------------------------------- */
+
 .md h1,
 .md h2,
 .md h3,
-.md h4 {
+.md h4,
+.md h5,
+.md h6 {
   font-family: var(--font-display);
   line-height: 1.25;
-  margin: var(--space-6) 0 var(--space-3);
+  color: var(--ink);
+  scroll-margin-top: var(--space-7);
 }
 
 .md h1 {
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: var(--space-7) 0 var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--hairline) solid var(--line);
 }
 
 .md h2 {
+  position: relative;
+  font-size: var(--text-xl);
+  font-weight: 650;
+  margin: var(--space-7) 0 var(--space-3);
+  padding-left: var(--space-4);
+}
+
+.md h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.md h3 {
   font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--accent-deep);
+  margin: var(--space-6) 0 var(--space-3);
 }
 
-.md h3,
-.md h4 {
+.md h4,
+.md h5,
+.md h6 {
   font-size: var(--text-base);
+  font-weight: 600;
+  margin: var(--space-5) 0 var(--space-2);
 }
 
-.md p,
-.md ul,
-.md ol,
-.md pre,
-.md blockquote,
-.md table {
+.md h4 {
+  color: var(--ink-muted);
+}
+
+/* --- Text ------------------------------------------------------------- */
+
+.md p {
   margin: 0 0 var(--space-4);
 }
 
-.md ul,
-.md ol {
-  padding-left: var(--space-5);
+.md strong {
+  font-weight: 650;
+  color: var(--ink);
 }
 
-.md li {
-  margin-bottom: var(--space-1);
+.md em {
+  font-style: italic;
+  color: var(--ink-muted);
+}
+
+.md mark {
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--ink);
+}
+
+.md del {
+  color: var(--ink-faint);
 }
 
 .md a {
   color: var(--accent);
   text-decoration: underline;
+  text-decoration-color: var(--accent-line);
   text-underline-offset: 3px;
+  transition: text-decoration-color var(--dur) var(--ease-out);
 }
+
+.md a:hover {
+  text-decoration-color: var(--accent);
+}
+
+.md hr {
+  margin: var(--space-7) auto;
+  width: 40%;
+  border: none;
+  border-top: var(--hairline) solid var(--line-strong);
+}
+
+/* --- Lists ------------------------------------------------------------ */
+
+.md ul,
+.md ol {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-6);
+}
+
+.md li {
+  margin-bottom: var(--space-2);
+}
+
+.md li::marker {
+  color: var(--accent);
+}
+
+.md ol li::marker {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--ink-faint);
+}
+
+.md li > ul,
+.md li > ol {
+  margin-top: var(--space-2);
+  margin-bottom: 0;
+}
+
+.md li.task-list-item {
+  list-style: none;
+  margin-left: calc(-1 * var(--space-5));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.md li.task-list-item input[type='checkbox'] {
+  margin-top: 0.4em;
+  accent-color: var(--accent);
+}
+
+/* --- Code ------------------------------------------------------------- */
 
 .md code {
   font-family: var(--font-mono);
-  font-size: 0.88em;
-  padding: 1px 4px;
+  font-size: 0.86em;
+  padding: 0.12em 0.36em;
   border-radius: var(--radius-sm);
-  background: var(--surface-sunken);
-  border: var(--hairline) solid var(--line);
+  background: var(--accent-dim);
+  color: var(--accent-deep);
+  border: var(--hairline) solid var(--accent-line);
 }
 
-.md pre {
-  padding: var(--space-4);
+.md-code {
+  position: relative;
+  margin: 0 0 var(--space-5);
+  border: var(--hairline) solid var(--line);
   border-radius: var(--radius);
   background: var(--surface-sunken);
-  border: var(--hairline) solid var(--line);
+  overflow: hidden;
+}
+
+.md-code-lang {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 3px var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--surface);
+  border-left: var(--hairline) solid var(--line);
+  border-bottom: var(--hairline) solid var(--line);
+  border-radius: 0 var(--radius) 0 var(--radius-sm);
+}
+
+.md-code pre {
+  margin: 0;
+  padding: var(--space-4);
   overflow-x: auto;
 }
 
-/* Inside a block the code needs no second box of its own. */
-.md pre code {
+.md-code code {
   padding: 0;
   background: none;
   border: none;
+  color: var(--ink);
   font-size: var(--text-sm);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
+/* --- Syntax ----------------------------------------------------------- */
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag,
+.hljs-meta {
+  color: var(--rel-related);
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-template-variable {
+  color: var(--rel-ecosystem);
+}
+
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-variable,
+.hljs-params {
+  color: var(--rel-prerequisite);
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-section,
+.hljs-name {
+  color: var(--accent-bright);
+  font-weight: 600;
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-property,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: var(--rel-core);
+}
+
+.hljs-built_in,
+.hljs-type,
+.hljs-class .hljs-title {
+  color: var(--accent-deep);
+}
+
+.hljs-deletion {
+  color: var(--danger);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+/* --- Quotes and callouts ---------------------------------------------- */
+
 .md blockquote {
-  padding: var(--space-1) var(--space-4);
-  border-left: 2px solid var(--accent-line);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  border-left: 3px solid var(--accent-line);
+  background: var(--surface-sunken);
+  border-radius: 0 var(--radius) var(--radius) 0;
   color: var(--ink-muted);
 }
 
-.md table {
+.md blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.md-callout {
+  display: flex;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: var(--hairline) solid var(--accent-line);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--accent-dim);
+}
+
+.md-callout-icon {
+  flex: 0 0 auto;
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+
+.md-callout-body {
+  min-width: 0;
+}
+
+.md-callout-body > :last-child {
+  margin-bottom: 0;
+}
+
+/* --- Tables ----------------------------------------------------------- */
+
+.md-table {
+  margin: 0 0 var(--space-5);
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+.md-table table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
 }
 
-.md th,
-.md td {
-  padding: var(--space-2) var(--space-3);
-  border: var(--hairline) solid var(--line);
+.md-table th,
+.md-table td {
+  padding: var(--space-3) var(--space-4);
   text-align: left;
+  vertical-align: top;
+  border-bottom: var(--hairline) solid var(--line);
 }
 
-.md th {
-  background: var(--surface-sunken);
+.md-table th {
+  font-family: var(--font-display);
   font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-sunken);
+  white-space: nowrap;
 }
 
-.md hr {
-  margin: var(--space-6) 0;
-  border: none;
-  border-top: var(--hairline) solid var(--line);
+.md-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--surface-sunken) 45%, transparent);
 }
+
+.md-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.md-table td + td,
+.md-table th + th {
+  border-left: var(--hairline) solid var(--line);
+}
+
+/* --- Media ------------------------------------------------------------ */
 
 .md img {
   max-width: 100%;
   height: auto;
+  margin-bottom: var(--space-4);
+  border: var(--hairline) solid var(--line);
   border-radius: var(--radius);
+}
+
+.md figure {
+  margin: 0 0 var(--space-5);
+}
+
+.md figcaption {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.md kbd {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  padding: 0.1em 0.4em;
+  border: var(--hairline) solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.md details {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+}
+
+.md details summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.md details[open] summary {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--hairline) solid var(--line);
 }

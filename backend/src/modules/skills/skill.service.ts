@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { skillRepository, type UserSkillWithRoadmap } from './skill.repository.ts'
 import { mapRepository } from '../maps/map.repository.ts'
+import { cleanImportedName, dedupeByName } from '../../lib/import-clean.ts'
+import { filterImportCandidates } from '../ai/import-filter.ts'
 import { canonicaliseOrThrow } from '../../lib/canonical.ts'
 import { identifySkill } from '../ai/identify.ts'
 import { BadRequestError, NotFoundError } from '../../lib/errors.ts'
@@ -47,6 +49,16 @@ export interface SkillSummary {
 export type CreateSkillResult =
   | { status: 'created'; skill: SkillSummary }
   | { status: 'suggestion'; suggestion: { name: string; reason: string } }
+
+export interface RejectedImport {
+  raw: string
+  reason: string
+}
+
+export interface ImportResult {
+  skills: SkillSummary[]
+  rejected: RejectedImport[]
+}
 
 export interface SkillDetail extends SkillSummary {
   stages: Array<{
@@ -166,24 +178,51 @@ export const skillService = {
     return { status: 'created', skill: toSummary(skill) }
   },
 
-  async importFromPeer(
-    userId: string,
-    input: ImportSkillsInput,
-  ): Promise<SkillSummary[]> {
+  async importFromPeer(userId: string, input: ImportSkillsInput): Promise<ImportResult> {
+    const cleaned = dedupeByName(input.skills.map(cleanImportedName))
+
+    const rejected: RejectedImport[] = cleaned
+      .filter((entry) => entry.rejected !== null)
+      .map((entry) => ({ raw: entry.raw, reason: entry.rejected as string }))
+
+    const candidates = cleaned
+      .map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) => entry.rejected === null)
+      .map(({ entry, index }) => ({ index, name: entry.name }))
+
+    const judgements = new Map<number, Awaited<ReturnType<typeof filterImportCandidates>>[number]>()
+
+    try {
+      for (const judgement of await filterImportCandidates(candidates)) {
+        judgements.set(judgement.index, judgement)
+      }
+    } catch {
+      judgements.clear()
+    }
+
     const seen = new Set<string>()
     const created: SkillSummary[] = []
 
-    for (const raw of input.skills) {
-      const { name, slug } = canonicaliseOrThrow(raw)
+    for (const candidate of candidates) {
+      const judgement = judgements.get(candidate.index)
+      const source = cleaned[candidate.index]?.raw ?? candidate.name
 
-      if (seen.has(slug)) continue
-      seen.add(slug)
+      if (judgement && !judgement.keep) {
+        rejected.push({ raw: source, reason: judgement.reason || 'not something you learn' })
+        continue
+      }
+
+      const canonical = canonicaliseOrThrow(judgement?.name ?? candidate.name)
+
+      if (seen.has(canonical.slug)) continue
+      seen.add(canonical.slug)
 
       const skill = await skillRepository.upsertBySlug({
         userId,
-        name,
-        slug,
+        name: canonical.name,
+        slug: canonical.slug,
         source: 'CAREEROS',
+        ...(judgement ? { kind: judgement.kind } : {}),
       })
 
       await mapRepository.linkNodesBySlug(userId, skill.slug, skill.id)
@@ -191,7 +230,7 @@ export const skillService = {
       created.push(toSummary(skill))
     }
 
-    return created
+    return { skills: created, rejected }
   },
 
   async setLanguage(

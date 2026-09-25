@@ -34,6 +34,21 @@ describe('normaliseMarkdown', () => {
     assert.equal(normaliseMarkdown('a\r\n\r\nb'), 'a\n\nb\n')
   })
 
+  it('turns a Notion callout into a blockquote', () => {
+    const source = 'Before\n<aside>\n💡 Keys are for identity.\n\n</aside>\nAfter'
+    const out = normaliseMarkdown(source)
+
+    assert.ok(out.includes('> 💡 Keys are for identity.'))
+    assert.ok(!out.includes('<aside>'))
+    assert.ok(out.includes('\n\nAfter'))
+  })
+
+  it('keeps a multi-paragraph callout together', () => {
+    const out = normaliseMarkdown('<aside>\n⚠️ One.\n\nTwo.\n</aside>')
+    assert.ok(out.includes('> ⚠️ One.'))
+    assert.ok(out.includes('> Two.'))
+  })
+
   it('is idempotent — running it twice changes nothing further', () => {
     const source = '# Title\nProse.\n- one\n- two\n| a | b |\n| - | - |'
     const once = normaliseMarkdown(source)

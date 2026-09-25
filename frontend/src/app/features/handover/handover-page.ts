@@ -5,9 +5,9 @@ import { SkillsStore } from '../../core/skills.store'
 import { RuneLoader } from '../../shared/rune-loader'
 import { Rune } from '../../shared/rune'
 import { parseHandover } from '../../core/handover'
-import type { Skill } from '../../core/api.types'
+import type { RejectedImport, Skill } from '../../core/api.types'
 
-type Phase = 'working' | 'done' | 'empty' | 'error'
+type Phase = 'working' | 'done' | 'empty' | 'rejected' | 'error'
 
 @Component({
   selector: 'sf-handover-page',
@@ -24,6 +24,7 @@ export class HandoverPage implements OnInit {
   protected readonly phase = signal<Phase>('working')
   protected readonly names = signal<string[]>([])
   protected readonly imported = signal<Skill[]>([])
+  protected readonly rejected = signal<RejectedImport[]>([])
   protected readonly error = signal<string | null>(null)
 
   ngOnInit(): void {
@@ -42,9 +43,15 @@ export class HandoverPage implements OnInit {
     try {
       const response = await this.api.importSkills(skills)
       this.imported.set(response.skills)
+      this.rejected.set(response.rejected)
       await this.skills.load(true)
 
-      if (response.skills.length === 1) {
+      if (response.skills.length === 0) {
+        this.phase.set('rejected')
+        return
+      }
+
+      if (response.skills.length === 1 && response.rejected.length === 0) {
         const only = response.skills[0] as Skill
         await this.router.navigate(['/skills', only.slug], { replaceUrl: true })
         return
@@ -53,7 +60,10 @@ export class HandoverPage implements OnInit {
       this.phase.set('done')
       await this.router.navigate(['/'], {
         replaceUrl: true,
-        state: { importedSlugs: response.skills.map((skill) => skill.slug) },
+        state: {
+          importedSlugs: response.skills.map((skill) => skill.slug),
+          rejected: response.rejected,
+        },
       })
     } catch (error: unknown) {
       this.error.set(describeHttpError(error))

@@ -33,6 +33,25 @@
     </section>
   }
 
+  @if (dropped().length > 0) {
+    <section class="dropped" role="status">
+      <div class="dropped-head">
+        <p class="dropped-title">
+          Left out {{ dropped().length }} line(s) that were not skills
+        </p>
+        <button class="btn btn--quiet" type="button" (click)="dismissDropped()">Dismiss</button>
+      </div>
+      <ul class="dropped-list">
+        @for (item of dropped(); track item.raw) {
+          <li>
+            <span class="dropped-name">{{ item.raw }}</span>
+            <span class="faint">— {{ item.reason }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
   @if (resume(); as skill) {
     <section class="resume">
       <div class="resume-text">

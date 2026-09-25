@@ -19,6 +19,11 @@ const CANONICAL: readonly CanonicalSkill[] = [
   { slug: 'html', name: 'HTML', aliases: ['html5', 'hyper-text-markup-language'] },
   { slug: 'css', name: 'CSS', aliases: ['css3', 'cascading-style-sheets'] },
   { slug: 'python', name: 'Python', aliases: ['py', 'python3'] },
+  { slug: 'generative-ai', name: 'Generative AI', aliases: ['genai', 'gen-ai', 'generative-artificial-intelligence'] },
+  { slug: 'machine-learning', name: 'Machine Learning', aliases: ['ml', 'machinelearning'] },
+  { slug: 'deep-learning', name: 'Deep Learning', aliases: ['dl', 'neural-networks'] },
+  { slug: 'data-science', name: 'Data Science', aliases: ['datascience'] },
+  { slug: 'nlp', name: 'Natural Language Processing', aliases: ['natural-language-processing'] },
 
   { slug: 'csharp', name: 'C#', aliases: ['c-sharp', 'csharp'] },
   { slug: 'cpp', name: 'C++', aliases: ['cplusplus', 'c-plus-plus'] },

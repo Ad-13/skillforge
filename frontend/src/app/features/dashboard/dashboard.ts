@@ -13,7 +13,7 @@ import { SkillsStore } from '../../core/skills.store'
 import { Rune } from '../../shared/rune'
 import { RuneLoader } from '../../shared/rune-loader'
 import { runeForSlug } from '../../shared/runes'
-import type { Skill } from '../../core/api.types'
+import type { RejectedImport, Skill } from '../../core/api.types'
 
 @Component({
   selector: 'sf-dashboard',
@@ -31,6 +31,7 @@ export class Dashboard implements OnInit {
   protected readonly runeFor = runeForSlug
 
   protected readonly justImported = signal<ReadonlySet<string>>(new Set<string>())
+  protected readonly dropped = signal<RejectedImport[]>([])
 
   protected readonly all = computed(() => this.store.skills())
 
@@ -74,10 +75,11 @@ export class Dashboard implements OnInit {
 
   constructor() {
     const state = this.router.getCurrentNavigation()?.extras.state as
-      | { importedSlugs?: string[] }
+      | { importedSlugs?: string[]; rejected?: RejectedImport[] }
       | undefined
 
     if (state?.importedSlugs) this.justImported.set(new Set(state.importedSlugs))
+    if (state?.rejected) this.dropped.set(state.rejected)
   }
 
   ngOnInit(): void {
@@ -90,6 +92,10 @@ export class Dashboard implements OnInit {
 
   protected isNew(skill: Skill): boolean {
     return this.justImported().has(skill.slug)
+  }
+
+  protected dismissDropped(): void {
+    this.dropped.set([])
   }
 
   protected async submit(): Promise<void> {

@@ -39,8 +39,14 @@ export interface SkillsResponse {
   skills: Skill[]
 }
 
+export interface RejectedImport {
+  raw: string
+  reason: string
+}
+
 export interface ImportSkillsResponse {
   skills: Skill[]
+  rejected: RejectedImport[]
 }
 
 export type SkillKind = 'TECHNOLOGY' | 'FIELD' | 'CONCEPT'

@@ -14,8 +14,21 @@ const kindOf = (trimmed: string): BlockKind | null => {
   return null
 }
 
+const ASIDE = /<aside>\s*([\s\S]*?)\s*<\/aside>/g
+
+const asideToQuote = (raw: string): string =>
+  raw.replace(ASIDE, (_match, body: string) => {
+    const lines = String(body)
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+
+    if (lines.length === 0) return ''
+    return `\n${lines.map((line) => `> ${line}`).join('\n>\n')}\n`
+  })
+
 export const normaliseMarkdown = (raw: string): string => {
-  const lines = raw.replace(/\r\n?/g, '\n').split('\n')
+  const lines = asideToQuote(raw.replace(/\r\n?/g, '\n')).split('\n')
   const out: string[] = []
   let inFence = false
 

@@ -58,8 +58,8 @@ export const skillController = {
       throw new BadRequestError('Invalid import payload', parsed.error.issues)
     }
 
-    const skills = await skillService.importFromPeer(session.userId, parsed.data)
-    res.status(200).json({ skills })
+    const result = await skillService.importFromPeer(session.userId, parsed.data)
+    res.status(200).json(result)
   },
 
   async update(req: Request, res: Response): Promise<void> {

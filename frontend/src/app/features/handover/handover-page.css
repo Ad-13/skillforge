@@ -34,6 +34,27 @@
   font-size: var(--text-sm);
 }
 
+.dropped {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-4);
+  max-width: 34rem;
+  text-align: left;
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
+.dropped-name + span {
+  margin-left: 0.35em;
+}
+
+.dropped-name {
+  color: var(--ink);
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

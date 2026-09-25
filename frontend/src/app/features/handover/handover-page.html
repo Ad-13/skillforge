@@ -15,6 +15,25 @@
     </section>
   }
 
+  @case ('rejected') {
+    <section class="panel state">
+      <div class="panel-body">
+        <sf-rune name="BERKANAN" [size]="34" />
+        <h2>Nothing there was a skill</h2>
+        <p class="muted">
+          Every line in that link was a requirement rather than a subject, so there was nothing to
+          add. Open your own list and add what you want to learn.
+        </p>
+        <ul class="dropped">
+          @for (item of rejected(); track item.raw) {
+            <li><span class="dropped-name">{{ item.raw }}</span> <span class="faint">— {{ item.reason }}</span></li>
+          }
+        </ul>
+        <a class="btn btn--primary" routerLink="/">Go to my skills</a>
+      </div>
+    </section>
+  }
+
   @case ('empty') {
     <section class="panel state">
       <div class="panel-body">

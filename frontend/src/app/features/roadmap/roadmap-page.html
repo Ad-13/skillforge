@@ -12,7 +12,8 @@
     <h1>{{ title() }}</h1>
     @if (roadmap(); as plan) {
       <p class="page-lede">
-        {{ plan.completedSteps }} of {{ plan.totalSteps }} steps done across {{ plan.stages.length }} stages
+        {{ plan.completedSteps }} of {{ plan.totalSteps }} steps done across
+        {{ plan.stages.length }} stages
         @if (plan.lastWorkedStage) {
           · last worked on {{ plan.lastWorkedStage }}
         }
@@ -44,7 +45,9 @@
 
 @if (roadmap(); as plan) {
   <div class="overall">
-    <span class="meter meter--gold"><span class="meter-fill" [style.width.%]="percent()"></span></span>
+    <span class="meter meter--gold"
+      ><span class="meter-fill" [style.width.%]="percent()"></span
+    ></span>
     <span class="overall-value">{{ percent() }}%</span>
   </div>
 }
@@ -201,8 +204,8 @@
       <sf-rune name="TIWAZ" [size]="34" />
       <h2>No plan yet</h2>
       <p class="muted">
-        Forging turns this skill's anatomy map into ordered stages with steps you can tick off.
-        If the map does not exist yet, it is built first.
+        Forging turns this skill's anatomy map into ordered stages with steps you can tick off. If
+        the map does not exist yet, it is built first.
       </p>
       <button class="btn btn--primary" type="button" (click)="forge()">Forge a plan</button>
     </div>

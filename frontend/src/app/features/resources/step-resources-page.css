@@ -15,7 +15,12 @@
   border: var(--hairline) solid var(--line);
   border-radius: var(--radius-xl);
   background:
-    linear-gradient(90deg, rgb(6 19 29 / 0.97) 0%, rgb(6 19 29 / 0.9) 45%, rgb(6 19 29 / 0.76) 100%),
+    linear-gradient(
+      90deg,
+      rgb(6 19 29 / 0.97) 0%,
+      rgb(6 19 29 / 0.9) 45%,
+      rgb(6 19 29 / 0.76) 100%
+    ),
     url('/images/mountains.webp') 72% 38% / cover no-repeat;
 }
 

@@ -338,7 +338,8 @@
 .gate-art {
   min-height: 34rem;
   border-right: var(--hairline) solid var(--line);
-  --art-shade: linear-gradient(90deg, rgb(2 8 18 / 0.9) 0%, rgb(2 8 18 / 0.45) 38%, transparent 60%),
+  --art-shade:
+    linear-gradient(90deg, rgb(2 8 18 / 0.9) 0%, rgb(2 8 18 / 0.45) 38%, transparent 60%),
     linear-gradient(0deg, rgb(2 8 18 / 0.8), transparent 30%);
 }
 

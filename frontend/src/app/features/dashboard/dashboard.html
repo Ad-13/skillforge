@@ -21,7 +21,8 @@
         @if (imported().length > 0) {
           <div class="import-row">
             <p class="import-title">
-              {{ imported().length }} {{ imported().length === 1 ? 'skill' : 'skills' }} added from CareerOS
+              {{ imported().length }} {{ imported().length === 1 ? 'skill' : 'skills' }} added from
+              CareerOS
             </p>
             <ul class="chips">
               @for (skill of imported(); track skill.slug) {
@@ -40,7 +41,8 @@
         @if (dropped().length > 0) {
           <div class="import-row">
             <p class="import-title">
-              {{ dropped().length }} {{ dropped().length === 1 ? 'item was' : 'items were' }} left out
+              {{ dropped().length }} {{ dropped().length === 1 ? 'item was' : 'items were' }} left
+              out
             </p>
             <ul class="chips">
               @for (item of dropped(); track item.raw) {
@@ -55,7 +57,12 @@
         }
       </div>
 
-      <button class="btn btn--quiet import-close" type="button" aria-label="Dismiss" (click)="dismissImport()">
+      <button
+        class="btn btn--quiet import-close"
+        type="button"
+        aria-label="Dismiss"
+        (click)="dismissImport()"
+      >
         <sf-icon name="x" [size]="18" />
       </button>
     </section>
@@ -71,8 +78,8 @@
         <sf-rune name="FEHU" [size]="36" />
         <h2>Nothing forged yet</h2>
         <p class="muted">
-          Type a skill into the search at the top — Angular, PostgreSQL, Docker — and press Enter. It
-          appears here with a map, and a plan once you forge one.
+          Type a skill into the search at the top — Angular, PostgreSQL, Docker — and press Enter.
+          It appears here with a map, and a plan once you forge one.
         </p>
       </div>
     </section>
@@ -124,7 +131,9 @@
             </div>
 
             <div class="journey-progress">
-              <span class="meter"><span class="meter-fill" [style.width.%]="percent(skill)"></span></span>
+              <span class="meter"
+                ><span class="meter-fill" [style.width.%]="percent(skill)"></span
+              ></span>
               <span class="journey-pct">{{ percent(skill) }}%</span>
             </div>
 
@@ -189,7 +198,9 @@
                   } @else if (skill.totalSteps > 0 && skill.progress >= 1) {
                     <span class="row-sub">All {{ skill.totalSteps }} steps done</span>
                   } @else if (skill.mapLenses.length > 0) {
-                    <span class="row-sub">{{ skill.mapLenses.length }} of 3 maps · no plan yet</span>
+                    <span class="row-sub"
+                      >{{ skill.mapLenses.length }} of 3 maps · no plan yet</span
+                    >
                   } @else {
                     <span class="row-sub">No map or plan yet</span>
                   }
@@ -205,7 +216,6 @@
                     <span class="row-pct row-pct--none">no plan</span>
                   }
                 </span>
-
               </a>
             </li>
           }

@@ -91,7 +91,6 @@
     0 6px 22px -8px rgb(235 197 106 / 0.65);
 }
 
-
 .btn:hover:not(:disabled) {
   border-color: rgb(130 190 210 / 0.38);
   background: rgb(16 37 50 / 0.85);

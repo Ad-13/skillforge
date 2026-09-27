@@ -11,9 +11,7 @@
     <p class="eyebrow">Skill map</p>
     <h1>{{ title() }}</h1>
     @if (map(); as loaded) {
-      <p class="page-lede">
-        {{ loaded.nodeCount }} nodes on this map
-      </p>
+      <p class="page-lede">{{ loaded.nodeCount }} nodes on this map</p>
     }
   </div>
 
@@ -79,7 +77,9 @@
     <div class="panel-body">
       <sf-rune name="HAGALAZ" [size]="34" />
       <h2>No such skill</h2>
-      <p class="muted">Nothing here answers to “{{ slug() }}”. It may have been removed in another tab.</p>
+      <p class="muted">
+        Nothing here answers to “{{ slug() }}”. It may have been removed in another tab.
+      </p>
       <a class="btn btn--ghost" routerLink="/">Back to the dashboard</a>
     </div>
   </section>
@@ -118,90 +118,108 @@
 
     @for (key of selectionKey(); track key) {
       @if (selected(); as current) {
-      <aside class="panel detail" [style.--hue]="relationColour(current.node.relation, current.depth)">
-        <div class="detail-head">
-          <sf-skill-badge [name]="current.node.label" [slug]="current.node.slug" size="lg" />
-          <div class="detail-title">
-            <p class="detail-relation">{{ relationLabel(current.node.relation, current.depth) }}</p>
-            <h2>{{ current.node.label }}</h2>
-          </div>
-        </div>
-
-        @if (current.node.summary) {
-          <p class="detail-summary">{{ current.node.summary }}</p>
-        } @else if (current.depth === 0) {
-          <p class="detail-summary">
-            The skill this map is built around. {{ lens().question }} — open any node to go one level
-            deeper.
-          </p>
-        }
-
-        @if (current.node.linked; as linked) {
-          <div class="detail-linked">
-            <p class="detail-label">{{ current.depth === 0 ? 'Your progress' : 'Already one of your skills' }}</p>
-            @if (linked.totalSteps > 0) {
-              <div class="detail-progress">
-                <span class="meter" [class.meter--gold]="current.depth === 0">
-                  <span class="meter-fill" [style.width.%]="percentOf(linked)"></span>
-                </span>
-                <span class="detail-pct">{{ percentOf(linked) }}%</span>
-              </div>
-              <p class="detail-note">{{ linked.completedSteps }} of {{ linked.totalSteps }} steps done</p>
-            } @else {
-              <p class="detail-note">No plan yet</p>
-            }
-            <div class="detail-actions">
-              @if (current.depth > 0) {
-                <a class="btn btn--ghost btn--sm" [routerLink]="['/skills', linked.slug]">
-                  <sf-icon name="map" [size]="16" />
-                  <span>Open map</span>
-                </a>
-              }
-              <a class="btn btn--primary btn--sm" [routerLink]="['/skills', linked.slug, 'roadmap']">
-                <span>{{ linked.hasRoadmap ? 'Open plan' : 'Forge a plan' }}</span>
-                <sf-icon name="arrow" [size]="16" />
-              </a>
+        <aside
+          class="panel detail"
+          [style.--hue]="relationColour(current.node.relation, current.depth)"
+        >
+          <div class="detail-head">
+            <sf-skill-badge [name]="current.node.label" [slug]="current.node.slug" size="lg" />
+            <div class="detail-title">
+              <p class="detail-relation">
+                {{ relationLabel(current.node.relation, current.depth) }}
+              </p>
+              <h2>{{ current.node.label }}</h2>
             </div>
           </div>
-        } @else if (current.depth > 0) {
-          <div class="detail-actions">
-            <button
-              class="btn btn--primary btn--sm"
-              type="button"
-              [disabled]="promotingNodeId() !== null"
-              (click)="promote(current.node.id)"
-            >
-              <sf-icon name="plus" [size]="16" />
-              <span>{{ promotingNodeId() === current.node.id ? 'Adding…' : 'Add as a skill' }}</span>
-            </button>
-          </div>
-        }
 
-        @if (current.depth > 0 && !current.node.expanded) {
-          <button
-            class="btn btn--cyan detail-deeper"
-            type="button"
-            [disabled]="pendingNodeId() !== null"
-            (click)="expand(current.node.id)"
-          >
-            <sf-icon name="map" [size]="16" />
-            <span>{{ pendingNodeId() === current.node.id ? 'Opening…' : 'Open the next level' }}</span>
-          </button>
-        } @else if (current.node.children.length > 0) {
-          <div>
-            <p class="detail-label">Next level · {{ current.node.children.length }}</p>
-            <ul class="detail-children">
-              @for (child of current.node.children; track child.id) {
-                <li [style.--dot]="relationColour(child.relation, 1)">
-                  <button type="button" (click)="selectedId.set(child.id)">{{ child.label }}</button>
-                </li>
+          @if (current.node.summary) {
+            <p class="detail-summary">{{ current.node.summary }}</p>
+          } @else if (current.depth === 0) {
+            <p class="detail-summary">
+              The skill this map is built around. {{ lens().question }} — open any node to go one
+              level deeper.
+            </p>
+          }
+
+          @if (current.node.linked; as linked) {
+            <div class="detail-linked">
+              <p class="detail-label">
+                {{ current.depth === 0 ? 'Your progress' : 'Already one of your skills' }}
+              </p>
+              @if (linked.totalSteps > 0) {
+                <div class="detail-progress">
+                  <span class="meter" [class.meter--gold]="current.depth === 0">
+                    <span class="meter-fill" [style.width.%]="percentOf(linked)"></span>
+                  </span>
+                  <span class="detail-pct">{{ percentOf(linked) }}%</span>
+                </div>
+                <p class="detail-note">
+                  {{ linked.completedSteps }} of {{ linked.totalSteps }} steps done
+                </p>
+              } @else {
+                <p class="detail-note">No plan yet</p>
               }
-            </ul>
-          </div>
-        } @else if (current.depth > 0) {
-          <p class="detail-note">Nothing further — this is where the branch ends.</p>
-        }
-      </aside>
+              <div class="detail-actions">
+                @if (current.depth > 0) {
+                  <a class="btn btn--ghost btn--sm" [routerLink]="['/skills', linked.slug]">
+                    <sf-icon name="map" [size]="16" />
+                    <span>Open map</span>
+                  </a>
+                }
+                <a
+                  class="btn btn--primary btn--sm"
+                  [routerLink]="['/skills', linked.slug, 'roadmap']"
+                >
+                  <span>{{ linked.hasRoadmap ? 'Open plan' : 'Forge a plan' }}</span>
+                  <sf-icon name="arrow" [size]="16" />
+                </a>
+              </div>
+            </div>
+          } @else if (current.depth > 0) {
+            <div class="detail-actions">
+              <button
+                class="btn btn--primary btn--sm"
+                type="button"
+                [disabled]="promotingNodeId() !== null"
+                (click)="promote(current.node.id)"
+              >
+                <sf-icon name="plus" [size]="16" />
+                <span>{{
+                  promotingNodeId() === current.node.id ? 'Adding…' : 'Add as a skill'
+                }}</span>
+              </button>
+            </div>
+          }
+
+          @if (current.depth > 0 && !current.node.expanded) {
+            <button
+              class="btn btn--cyan detail-deeper"
+              type="button"
+              [disabled]="pendingNodeId() !== null"
+              (click)="expand(current.node.id)"
+            >
+              <sf-icon name="map" [size]="16" />
+              <span>{{
+                pendingNodeId() === current.node.id ? 'Opening…' : 'Open the next level'
+              }}</span>
+            </button>
+          } @else if (current.node.children.length > 0) {
+            <div>
+              <p class="detail-label">Next level · {{ current.node.children.length }}</p>
+              <ul class="detail-children">
+                @for (child of current.node.children; track child.id) {
+                  <li [style.--dot]="relationColour(child.relation, 1)">
+                    <button type="button" (click)="selectedId.set(child.id)">
+                      {{ child.label }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            </div>
+          } @else if (current.depth > 0) {
+            <p class="detail-note">Nothing further — this is where the branch ends.</p>
+          }
+        </aside>
       }
     }
   </div>
@@ -211,8 +229,8 @@
       <sf-rune name="BERKANAN" [size]="34" />
       <h2>{{ lens().question }}</h2>
       <p class="muted">
-        Nothing is generated until you ask. This builds the first level only — every node after
-        that is opened by clicking it, so the map goes exactly as deep as you take it.
+        Nothing is generated until you ask. This builds the first level only — every node after that
+        is opened by clicking it, so the map goes exactly as deep as you take it.
       </p>
       <button class="btn btn--primary" type="button" (click)="generate()">
         Generate {{ lens().title.toLowerCase() }}

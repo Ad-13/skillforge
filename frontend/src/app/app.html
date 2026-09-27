@@ -59,7 +59,11 @@
               <span>Skill map</span>
             </a>
 
-            <a class="nav" [routerLink]="['/skills', slug, 'roadmap']" routerLinkActive="is-current">
+            <a
+              class="nav"
+              [routerLink]="['/skills', slug, 'roadmap']"
+              routerLinkActive="is-current"
+            >
               <sf-icon name="plan" />
               <span>Plan</span>
             </a>
@@ -88,7 +92,9 @@
                   >
                     <sf-skill-badge [name]="skill.name" [slug]="skill.slug" size="xs" />
                     <span class="jump-name">{{ skill.name }}</span>
-                    <span class="jump-pct">{{ skill.totalSteps > 0 ? pct(skill) + '%' : '—' }}</span>
+                    <span class="jump-pct">{{
+                      skill.totalSteps > 0 ? pct(skill) + '%' : '—'
+                    }}</span>
                   </a>
                 </li>
               }

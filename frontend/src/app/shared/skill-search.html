@@ -1,7 +1,9 @@
 <div class="box" (focusout)="onFocusOut($event)">
   <label class="field-wrap" [class.is-open]="showPanel()" [class.is-creating]="creating()">
     <sf-icon [name]="creating() ? 'plus' : 'search'" [size]="18" />
-    <span class="visually-hidden">{{ creating() ? 'Name a new skill' : 'Find one of your skills' }}</span>
+    <span class="visually-hidden">{{
+      creating() ? 'Name a new skill' : 'Find one of your skills'
+    }}</span>
     <input
       #input
       type="text"
@@ -13,7 +15,9 @@
       aria-autocomplete="list"
       aria-controls="skill-options"
       [attr.aria-expanded]="showPanel()"
-      [attr.aria-activedescendant]="showPanel() && options().length > 0 ? optionId(activeIndex()) : null"
+      [attr.aria-activedescendant]="
+        showPanel() && options().length > 0 ? optionId(activeIndex()) : null
+      "
       [value]="query()"
       (input)="onInput($any($event.target).value)"
       (focus)="onFocus()"
@@ -41,14 +45,17 @@
         <div class="suggestion" role="status">
           <p>
             “{{ suggestion.from }}” is not a skill you can learn. Did you mean
-            <strong>{{ suggestion.name }}</strong>?
+            <strong>{{ suggestion.name }}</strong
+            >?
           </p>
           <p class="reason">{{ suggestion.reason }}</p>
           <div class="suggestion-actions">
             <button class="btn btn--primary btn--sm" type="button" (click)="accept()">
               Add {{ suggestion.name }}
             </button>
-            <button class="btn btn--ghost btn--sm" type="button" (click)="dismiss()">Keep typing</button>
+            <button class="btn btn--ghost btn--sm" type="button" (click)="dismiss()">
+              Keep typing
+            </button>
           </div>
         </div>
       } @else if (store.creating()) {
@@ -60,8 +67,8 @@
 
         @if (creating() && query().trim().length === 0) {
           <p class="status status--hint">
-            Type the name of a technology or topic and press Enter. SkillForge checks the name,
-            then builds its map.
+            Type the name of a technology or topic and press Enter. SkillForge checks the name, then
+            builds its map.
           </p>
         }
 

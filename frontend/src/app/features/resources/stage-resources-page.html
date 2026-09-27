@@ -1,34 +1,36 @@
 <nav class="crumbs">
-  <a routerLink="/">← All skills</a>
-  <span class="faint">·</span>
+  <a routerLink="/">Dashboard</a>
+  <span class="crumbs-sep">/</span>
   <a [routerLink]="['/skills', slug()]">{{ skillName() }}</a>
-  <span class="faint">·</span>
+  <span class="crumbs-sep">/</span>
   <a [routerLink]="['/skills', slug(), 'roadmap']">Plan</a>
-  <span class="faint">·</span>
-  <a [routerLink]="['/skills', slug(), 'resources']">All resources</a>
+  <span class="crumbs-sep">/</span>
+  <a [routerLink]="['/skills', slug(), 'resources']">Resources</a>
 </nav>
 
 @if (stage(); as st) {
-  <header class="head">
-    <div class="head-text">
+  <header class="page-head">
+    <div>
       <p class="eyebrow">Stage {{ st.position + 1 }} · resources</p>
       <h1>{{ st.title }}</h1>
       @if (st.rationale) {
-        <p class="muted lede">{{ st.rationale }}</p>
+        <p class="page-lede">{{ st.rationale }}</p>
       }
-      <p class="meta faint">
-        {{ total() }} resource(s) · {{ st.covered }} of {{ st.steps.length }} steps covered
+      <p class="meta">
+        {{ total() }} {{ total() === 1 ? 'resource' : 'resources' }} · {{ st.covered }} of
+        {{ st.steps.length }} steps covered
       </p>
     </div>
 
-    <div class="head-actions">
+    <div class="page-actions">
       <button
-        class="btn btn--ghost"
+        class="btn btn--cyan"
         type="button"
         [disabled]="forging() || loading()"
         (click)="forge()"
       >
-        {{ forging() ? 'Searching…' : total() > 0 ? 'Find again for all steps' : 'Find for all steps' }}
+        <sf-icon name="spark" [size]="16" />
+        <span>{{ forging() ? 'Searching…' : total() > 0 ? 'Find again for all steps' : 'Find for all steps' }}</span>
       </button>
     </div>
   </header>
@@ -58,7 +60,7 @@
   <section class="panel state">
     <div class="panel-body">
       <sf-rune-loader [size]="30" label="Looking for material" />
-      <p class="muted wait">
+      <p class="muted">
         One request for the whole stage, so the model can spread the coverage instead of giving
         every step the same landing page.
       </p>
@@ -67,54 +69,45 @@
 } @else if (stage(); as st) {
   <ol class="steps">
     @for (step of st.steps; track step.id; let i = $index) {
-      <li class="step stagger" [class.is-complete]="step.complete" [style.--i]="i">
-        <a
-          class="step-head"
-          [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']"
-        >
-          <span class="step-box" aria-hidden="true">{{ step.complete ? '✓' : '' }}</span>
+      <li class="panel step stagger" [class.is-complete]="step.complete" [style.--i]="i">
+        <a class="step-head" [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']">
+          <span class="step-box" aria-hidden="true">
+            @if (step.complete) {
+              <sf-icon name="check" [size]="13" />
+            }
+          </span>
           <span class="step-text">
             <span class="step-title">{{ step.title }}</span>
             @if (step.summary) {
-              <span class="step-summary muted">{{ step.summary }}</span>
+              <span class="step-summary">{{ step.summary }}</span>
             }
           </span>
-          <span class="step-count">
-            @if (step.resources.length > 0) {
-              <span class="tag tag--accent">{{ step.resources.length }}</span>
-            } @else {
-              <span class="tag">none</span>
-            }
-            <span class="step-go" aria-hidden="true">→</span>
+          <span class="step-count" [class.is-empty]="step.resources.length === 0">
+            <sf-icon name="book" [size]="15" />
+            {{ step.resources.length }}
           </span>
+          <sf-icon class="step-go" name="chevron" [size]="18" />
         </a>
 
         @if (step.resources.length > 0) {
-          <ul class="links">
+          <ul class="items">
             @for (resource of step.resources; track resource.id) {
-              <li class="link">
-                <span class="link-kind">
-                  {{ resource.kind === 'NOTE' ? 'note' : sourceLabel(resource) }}
-                </span>
+              <li>
                 @if (resource.kind === 'NOTE') {
-                  <a
-                    class="link-title"
-                    [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']"
-                  >
-                    {{ resource.title }}
+                  <a class="item" [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']">
+                    <span class="item-icon" [style.--hue]="hue(resource)"><sf-icon [name]="icon(resource)" [size]="16" /></span>
+                    <span class="item-title">{{ resource.title }}</span>
+                    <span class="item-sub">Note</span>
                   </a>
                 } @else {
-                  <a
-                    class="link-title"
-                    [href]="hrefFor(resource)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {{ resource.title }}
+                  <a class="item" [href]="href(resource)" target="_blank" rel="noopener noreferrer">
+                    <span class="item-icon" [style.--hue]="hue(resource)"><sf-icon [name]="icon(resource)" [size]="16" /></span>
+                    <span class="item-title">{{ resource.title }}</span>
+                    <span class="item-sub">{{ host(resource) }} · {{ label(resource) }}</span>
+                    @if (resource.origin === 'USER') {
+                      <span class="tag tag--gold">mine</span>
+                    }
                   </a>
-                }
-                @if (resource.origin === 'USER') {
-                  <span class="tag">mine</span>
                 }
               </li>
             }

@@ -8,10 +8,6 @@ body {
   font-family: var(--font-body);
   font-size: var(--text-base);
   line-height: 1.6;
-
-  transition:
-    background-color var(--dur-slow) var(--ease-out),
-    color var(--dur-slow) var(--ease-out);
 }
 
 h1,
@@ -65,12 +61,12 @@ samp {
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--gold);
+  color: var(--on-gold);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }

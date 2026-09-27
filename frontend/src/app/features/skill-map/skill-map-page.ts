@@ -13,12 +13,51 @@ import { SkillsStore } from '../../core/skills.store'
 import { RuneLoader } from '../../shared/rune-loader'
 import { Rune } from '../../shared/rune'
 import { SkillTree } from './skill-tree'
-import { LENSES, type LensDescriptor, type MapLens, type SkillMap } from '../../core/api.types'
+import { Icon } from '../../shared/icon'
+import { SkillBadge } from '../../shared/skill-badge'
+import {
+  LENSES,
+  type LensDescriptor,
+  type LinkedSkill,
+  type MapLens,
+  type MapNode,
+  type NodeRelation,
+  type SkillMap,
+} from '../../core/api.types'
+
+interface Located {
+  node: MapNode
+  depth: number
+}
+
+const locate = (node: MapNode | null, id: string | null, depth = 0): Located | null => {
+  if (!node) return null
+  if (id === null || node.id === id) return { node, depth }
+  for (const child of node.children) {
+    const found = locate(child, id, depth + 1)
+    if (found) return found
+  }
+  return null
+}
+
+const RELATION_LABEL: Record<NodeRelation, string> = {
+  PREREQUISITE: 'Required first',
+  CORE: 'Part of it',
+  ECOSYSTEM: 'Used alongside',
+  RELATED: 'Helpful',
+}
+
+const RELATION_COLOUR: Record<NodeRelation, string> = {
+  PREREQUISITE: 'var(--rel-prerequisite)',
+  CORE: 'var(--rel-core)',
+  ECOSYSTEM: 'var(--rel-ecosystem)',
+  RELATED: 'var(--rel-related)',
+}
 
 @Component({
   selector: 'sf-skill-map-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Rune, RuneLoader, SkillTree],
+  imports: [RouterLink, Rune, RuneLoader, SkillTree, Icon, SkillBadge],
   templateUrl: './skill-map-page.html',
   styleUrl: './skill-map-page.css',
 })
@@ -49,6 +88,13 @@ export class SkillMapPage {
     const cache = this.cache()
     return cache.slug === this.slug() ? (cache.maps[this.lens().lens] ?? null) : null
   })
+  protected readonly selectedId = signal<string | null>(null)
+
+  protected readonly selected = computed(() => {
+    const root = this.map()?.root ?? null
+    return locate(root, this.selectedId()) ?? locate(root, null)
+  })
+
   protected readonly skill = computed(() => this.skills.bySlug(this.slug()))
   protected readonly title = computed(() => this.skill()?.name ?? this.slug())
 
@@ -79,6 +125,7 @@ export class SkillMapPage {
 
   protected selectLens(lens: LensDescriptor): void {
     if (this.generating() || this.pendingNodeId() !== null) return
+    this.selectedId.set(null)
     this.lens.set(lens)
   }
 
@@ -86,6 +133,7 @@ export class SkillMapPage {
     const cached = this.cache()
 
     if (cached.slug !== slug) {
+      this.selectedId.set(null)
       this.cache.set({ slug, maps: {} })
       this.error.set(null)
       this.lastEmpty.set(null)
@@ -177,5 +225,19 @@ export class SkillMapPage {
     } finally {
       this.promotingNodeId.set(null)
     }
+  }
+
+  protected relationLabel(relation: NodeRelation | null, depth: number): string {
+    if (depth === 0) return 'Your skill'
+    return relation ? RELATION_LABEL[relation] : 'Topic'
+  }
+
+  protected relationColour(relation: NodeRelation | null, depth: number): string {
+    if (depth === 0) return 'var(--gold)'
+    return relation ? RELATION_COLOUR[relation] : 'var(--ink-muted)'
+  }
+
+  protected percentOf(linked: LinkedSkill): number {
+    return Math.round(linked.progress * 100)
   }
 }

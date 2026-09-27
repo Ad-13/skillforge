@@ -1,28 +1,35 @@
 <nav class="crumbs">
-  <a routerLink="/">← All skills</a>
-  <span class="faint">·</span>
-  <a [routerLink]="['/skills', slug()]">Skill map</a>
-  <span class="faint">·</span>
-  <a [routerLink]="['/skills', slug(), 'roadmap']">Learning plan</a>
+  <a routerLink="/">Dashboard</a>
+  <span class="crumbs-sep">/</span>
+  <a [routerLink]="['/skills', slug()]">{{ title() }}</a>
+  <span class="crumbs-sep">/</span>
+  <span>Resources</span>
 </nav>
 
-<header class="head">
-  <div class="head-text">
+<header class="page-head">
+  <div>
     <p class="eyebrow">Resources</p>
     <h1>{{ title() }}</h1>
-
     @if (resources(); as set) {
-      <p class="meta faint">
-        {{ set.total }} resource(s) across {{ set.stages.length }} stage(s)
+      <p class="page-lede">
+        {{ set.total }} {{ set.total === 1 ? 'link or note' : 'links and notes' }}, grouped by stage and step.
       </p>
     }
   </div>
 
-  @if (!missing() && stageCount() > 0) {
-    <div class="head-actions">
-      <button class="btn btn--quiet" type="button" (click)="toggleAll()">
-        {{ allOpen() ? 'Collapse all' : 'Expand all' }}
-      </button>
+  @if (resources()?.hasRoadmap) {
+    <div class="tabs" role="tablist" aria-label="Filter by kind">
+      @for (item of filters; track item.id) {
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="filter() === item.id"
+          [class.is-current]="filter() === item.id"
+          (click)="filter.set(item.id)"
+        >
+          {{ item.label }}
+        </button>
+      }
     </div>
   }
 </header>
@@ -36,7 +43,7 @@
     <div class="panel-body">
       <sf-rune name="HAGALAZ" [size]="34" />
       <h2>No such skill</h2>
-      <a class="btn btn--ghost" routerLink="/">Back to all skills</a>
+      <a class="btn btn--ghost" routerLink="/">Back to the dashboard</a>
     </div>
   </section>
 } @else if (loading()) {
@@ -53,129 +60,141 @@
           Resources hang on the steps of a plan, so there is nowhere to put them until the plan
           exists. Forge one and come back.
         </p>
-        <a class="btn btn--primary" [routerLink]="['/skills', slug(), 'roadmap']">
-          Go to the plan
-        </a>
+        <a class="btn btn--primary" [routerLink]="['/skills', slug(), 'roadmap']">Go to the plan</a>
       </div>
     </section>
   } @else {
-    <ol class="stages">
-      @for (stage of set.stages; track stage.id; let i = $index) {
-        <li class="stage stagger" [class.is-open]="isOpen(stage.id)" [style.--i]="i">
-          <div class="stage-head">
-            <button
-              class="stage-toggle"
-              type="button"
-              [attr.aria-expanded]="isOpen(stage.id)"
-              [attr.aria-controls]="'stage-body-' + stage.id"
-              (click)="toggleStage(stage.id)"
-            >
-              <span class="stage-number">{{ i + 1 }}</span>
-              <span class="stage-title">{{ stage.title }}</span>
-
-              <span class="stage-count">
-                @if (countIn(stage) > 0) {
-                  <span class="tag tag--accent">{{ countIn(stage) }}</span>
-                  <span class="stage-tally">{{ stage.covered }}/{{ stage.steps.length }} steps</span>
-                } @else {
-                  <span class="stage-tally faint">empty</span>
-                }
-              </span>
-
-              <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true">
-                <polyline points="4,6 8,10 12,6" />
-              </svg>
-            </button>
-
-            <a
-              class="stage-open"
-              [routerLink]="['/skills', slug(), 'stages', stage.id, 'resources']"
-              [attr.aria-label]="'Open resources for ' + stage.title"
-            >
-              Open →
-            </a>
-          </div>
-
-          @if (isOpen(stage.id)) {
-            <div class="stage-body" [id]="'stage-body-' + stage.id">
-              <ul class="steps">
-                @for (step of stage.steps; track step.id) {
-                  <li class="step" [class.is-complete]="step.complete">
-                    <a
-                      class="step-title"
-                      [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']"
-                    >
-                      <span class="step-box" aria-hidden="true">{{ step.complete ? '✓' : '' }}</span>
-                      <span class="step-name">{{ step.title }}</span>
-                      <span class="step-count">
-                        @if (step.resources.length > 0) {
-                          <span class="tag tag--accent">{{ step.resources.length }}</span>
-                        }
-                        <span class="step-go" aria-hidden="true">→</span>
-                      </span>
-                    </a>
-
-                    @if (step.resources.length > 0) {
-                      <ul class="links">
-                        @for (resource of step.resources; track resource.id) {
-                          <li class="link">
-                            <span class="link-kind">
-                              {{ resource.kind === 'NOTE' ? 'note' : sourceLabel(resource) }}
-                            </span>
-                            @if (resource.kind === 'NOTE') {
-                              <a
-                                class="link-title"
-                                [routerLink]="['/skills', slug(), 'steps', step.id, 'resources']"
-                              >
-                                {{ resource.title }}
-                              </a>
-                            } @else {
-                              <a
-                                class="link-title"
-                                [href]="hrefFor(resource)"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {{ resource.title }}
-                              </a>
-                            }
-                            @if (resource.origin === 'USER') {
-                              <span class="tag">mine</span>
-                            }
-                          </li>
-                        }
-                      </ul>
-                    } @else {
-                      <p class="step-empty faint">Nothing yet.</p>
-                    }
-                  </li>
-                }
-              </ul>
-            </div>
-          }
-        </li>
-      }
-    </ol>
-
-    @if (set.general.length > 0) {
-      <section class="general">
-        <h2 class="general-title">For the skill as a whole</h2>
-        <ul class="links">
-          @for (resource of set.general; track resource.id) {
-            <li class="link">
-              <span class="link-kind">{{ sourceLabel(resource) }}</span>
-              <a
-                class="link-title"
-                [href]="hrefFor(resource)"
-                target="_blank"
-                rel="noopener noreferrer"
+    <div class="layout">
+      <aside class="panel stages">
+        <h2 class="panel-title stages-title">Stages</h2>
+        <ul class="stage-list">
+          @for (stage of set.stages; track stage.id; let i = $index) {
+            <li>
+              <button
+                type="button"
+                class="stage-item"
+                [class.is-current]="selectedStage()?.id === stage.id && !showingGeneral()"
+                (click)="select(stage.id)"
               >
-                {{ resource.title }}
-              </a>
+                <span class="stage-num">{{ (i + 1).toString().padStart(2, '0') }}</span>
+                <span class="stage-name">{{ stage.title }}</span>
+                <span class="stage-count" [class.is-empty]="countIn(stage) === 0">{{ countIn(stage) }}</span>
+              </button>
+            </li>
+          }
+          @if (set.general.length > 0) {
+            <li>
+              <button
+                type="button"
+                class="stage-item"
+                [class.is-current]="showingGeneral()"
+                (click)="select(general)"
+              >
+                <sf-rune class="stage-num" name="OTHALA" [size]="14" />
+                <span class="stage-name">Whole skill</span>
+                <span class="stage-count">{{ set.general.length }}</span>
+              </button>
             </li>
           }
         </ul>
+      </aside>
+
+      <section class="panel content">
+        @if (showingGeneral()) {
+          <header class="content-head">
+            <div>
+              <p class="eyebrow">Whole skill</p>
+              <h2 class="content-title">For {{ title() }} as a whole</h2>
+            </div>
+          </header>
+
+          @if (generalItems().length === 0) {
+            <p class="empty">Nothing of this kind here.</p>
+          } @else {
+            <ul class="items">
+              @for (resource of generalItems(); track resource.id) {
+                <li>
+                  <a class="item" [href]="href(resource)" target="_blank" rel="noopener noreferrer">
+                    <span class="item-icon" [style.--hue]="hue(resource)"><sf-icon [name]="icon(resource)" [size]="17" /></span>
+                    <span class="item-text">
+                      <span class="item-title">{{ resource.title }}</span>
+                      <span class="item-sub">{{ host(resource) }} · {{ label(resource) }}</span>
+                    </span>
+                    <sf-icon class="item-go" name="external" [size]="16" />
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        } @else if (selectedStage(); as stage) {
+          <header class="content-head">
+            <div>
+              <p class="eyebrow">Stage {{ stage.position + 1 }}</p>
+              <h2 class="content-title">{{ stage.title }}</h2>
+              <p class="content-meta">{{ stage.covered }} of {{ stage.steps.length }} steps have material</p>
+            </div>
+            <a class="btn btn--cyan btn--sm" [routerLink]="['/skills', slug(), 'stages', stage.id, 'resources']">
+              <sf-icon name="spark" [size]="16" />
+              <span>Find for all steps</span>
+            </a>
+          </header>
+
+          @if (groups().length === 0) {
+            <p class="empty">Nothing of this kind in this stage.</p>
+          }
+
+          @for (group of groups(); track group.step.id) {
+            <div class="group">
+              <div class="group-head">
+                <span class="group-title" [class.is-complete]="group.step.complete">
+                  @if (group.step.complete) {
+                    <sf-icon name="check" [size]="15" />
+                  }
+                  {{ group.step.title }}
+                </span>
+                <a class="group-open" [routerLink]="['/skills', slug(), 'steps', group.step.id, 'resources']">
+                  Open step
+                  <sf-icon name="arrow" [size]="15" />
+                </a>
+              </div>
+
+              @if (group.items.length === 0) {
+                <p class="group-empty">Nothing yet.</p>
+              } @else {
+                <ul class="items">
+                  @for (resource of group.items; track resource.id) {
+                    <li>
+                      @if (resource.kind === 'NOTE') {
+                        <a class="item" [routerLink]="['/skills', slug(), 'steps', group.step.id, 'resources']">
+                          <span class="item-icon" [style.--hue]="hue(resource)"><sf-icon [name]="icon(resource)" [size]="17" /></span>
+                          <span class="item-text">
+                            <span class="item-title">{{ resource.title }}</span>
+                            <span class="item-sub">Note</span>
+                          </span>
+                          <span class="tag">note</span>
+                          <sf-icon class="item-go" name="chevron" [size]="16" />
+                        </a>
+                      } @else {
+                        <a class="item" [href]="href(resource)" target="_blank" rel="noopener noreferrer">
+                          <span class="item-icon" [style.--hue]="hue(resource)"><sf-icon [name]="icon(resource)" [size]="17" /></span>
+                          <span class="item-text">
+                            <span class="item-title">{{ resource.title }}</span>
+                            <span class="item-sub">{{ host(resource) }} · {{ label(resource) }}</span>
+                          </span>
+                          @if (resource.origin === 'USER') {
+                            <span class="tag tag--gold">mine</span>
+                          }
+                          <sf-icon class="item-go" name="external" [size]="16" />
+                        </a>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        }
       </section>
-    }
+    </div>
   }
 }

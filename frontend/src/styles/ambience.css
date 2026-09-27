@@ -1,43 +1,11 @@
-body::before,
-body::after {
+body::before {
   content: '';
   position: fixed;
+  inset: 0;
   pointer-events: none;
   z-index: var(--z-ambience);
-  opacity: var(--ambience-opacity);
-}
-
-body::before {
-  inset: -30%;
   background:
-    radial-gradient(48% 34% at 22% 8%, var(--accent-glow), transparent 68%),
-    radial-gradient(42% 30% at 82% 4%, rgb(125 224 176 / 0.16), transparent 70%),
-    radial-gradient(56% 40% at 60% 100%, rgb(160 143 216 / 0.12), transparent 72%);
-  filter: blur(18px);
-  animation: aurora-drift 34s var(--ease-out) infinite alternate;
-}
-
-body::after {
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent 0 2px,
-    rgb(127 127 127 / 0.035) 2px 3px
-  );
-  opacity: calc(var(--ambience-opacity) * 0.5);
-}
-
-@keyframes aurora-drift {
-  from {
-    transform: translate3d(-2%, -1%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(3%, 2%, 0) scale(1.06);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body::before {
-    animation: none;
-  }
+    radial-gradient(1100px 680px at 82% -12%, rgb(22 131 161 / 0.16), transparent 62%),
+    radial-gradient(900px 620px at 6% 112%, rgb(158 116 42 / 0.1), transparent 62%),
+    radial-gradient(700px 480px at 40% 40%, rgb(16 37 50 / 0.35), transparent 70%);
 }

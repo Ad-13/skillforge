@@ -105,8 +105,8 @@
   padding: var(--space-2) var(--space-3);
   border: var(--hairline) solid var(--line);
   border-left: 2px solid var(--rel, var(--line-strong));
-  border-radius: var(--radius);
-  background: var(--surface);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgb(19 38 58 / 0.94), rgb(11 27 39 / 0.94));
   overflow: hidden;
   cursor: default;
 
@@ -118,16 +118,24 @@
 }
 
 .node.is-active {
-  background: var(--surface-raised);
+  background: linear-gradient(180deg, rgb(24 46 68 / 0.96), rgb(13 32 46 / 0.96));
   border-color: var(--rel, var(--accent));
-  box-shadow: var(--shadow-raised);
+  box-shadow: 0 0 24px -8px var(--rel, var(--accent));
+}
+
+.node.is-selected {
+  border-color: var(--rel, var(--accent));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--rel, var(--accent)) 18%, transparent),
+    0 0 26px -6px var(--rel, var(--accent));
 }
 
 .node[data-depth='0'] {
-  --rel: var(--accent);
+  --rel: var(--gold);
   border-left-width: 3px;
-  background: var(--surface-raised);
-  box-shadow: var(--glow-soft);
+  border-color: var(--gold-line);
+  background: linear-gradient(180deg, rgb(35 38 40 / 0.95), rgb(13 27 36 / 0.95));
+  box-shadow: var(--glow-gold);
   justify-content: center;
 }
 
@@ -298,7 +306,8 @@
   display: block;
   height: 100%;
   border-radius: 99px;
-  background: var(--accent);
+  background: linear-gradient(90deg, #1683a1, var(--accent));
+  box-shadow: 0 0 8px rgb(97 213 232 / 0.6);
   transition: width var(--dur-slow) var(--ease-out);
 }
 
@@ -327,8 +336,8 @@
 
 .node-go:hover,
 .node-go:focus-visible {
-  color: var(--accent);
-  background: var(--accent-dim);
+  color: var(--gold-bright);
+  background: var(--gold-dim);
 }
 
 .node-promote {
@@ -339,9 +348,9 @@
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.03em;
-  color: var(--ink-muted);
+  color: var(--gold);
   background: var(--surface-raised);
-  border: var(--hairline) solid var(--line);
+  border: var(--hairline) solid var(--gold-line);
   border-radius: var(--radius-sm);
   opacity: 0;
   pointer-events: none;
@@ -360,8 +369,8 @@
 
 .node-promote:hover:not(:disabled),
 .node-promote:focus-visible {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--gold-bright);
+  border-color: var(--gold-line);
 }
 
 .node-promote:disabled {

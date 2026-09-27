@@ -12,20 +12,32 @@ import { SkillForgeApi, describeHttpError } from '../../core/skillforge-api'
 import { SkillsStore } from '../../core/skills.store'
 import { RuneLoader } from '../../shared/rune-loader'
 import { Rune } from '../../shared/rune'
-import type { Resource, ResourceSourceType, ResourceStage, SkillResources } from '../../core/api.types'
+import { Icon, type IconName } from '../../shared/icon'
+import {
+  matchesFilter,
+  resourceHost,
+  resourceHref,
+  resourceHue,
+  resourceIcon,
+  resourceLabel,
+  type ResourceFilter,
+} from '../../shared/resource-display'
+import type { Resource, ResourceStage, SkillResources } from '../../core/api.types'
 
-const SOURCE_LABEL: Record<ResourceSourceType, string> = {
-  DOCS: 'docs',
-  ARTICLE: 'article',
-  VIDEO: 'video',
-  REPO: 'repo',
-  COURSE: 'course',
-}
+const GENERAL = 'general'
+
+const FILTERS: readonly { id: ResourceFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'DOCS', label: 'Docs' },
+  { id: 'ARTICLE', label: 'Articles' },
+  { id: 'VIDEO', label: 'Videos' },
+  { id: 'NOTE', label: 'Notes' },
+]
 
 @Component({
   selector: 'sf-resources-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Rune, RuneLoader],
+  imports: [RouterLink, Rune, RuneLoader, Icon],
   templateUrl: './resources-page.html',
   styleUrl: './resources-page.css',
 })
@@ -35,24 +47,41 @@ export class ResourcesPage {
   private readonly api = inject(SkillForgeApi)
   protected readonly skills = inject(SkillsStore)
 
+  protected readonly filters = FILTERS
+  protected readonly general = GENERAL
+
   protected readonly resources = signal<SkillResources | null>(null)
   protected readonly loading = signal(true)
   protected readonly error = signal<string | null>(null)
   protected readonly missing = signal(false)
-
-  private readonly openStageIds = signal<ReadonlySet<string>>(new Set<string>())
+  protected readonly selectedId = signal<string | null>(null)
+  protected readonly filter = signal<ResourceFilter>('all')
 
   protected readonly skill = computed(() => this.skills.bySlug(this.slug()))
   protected readonly title = computed(() => this.skill()?.name ?? this.slug())
 
-  protected readonly stageCount = computed(() => this.resources()?.stages.length ?? 0)
-  protected readonly openCount = computed(() => {
-    const open = this.openStageIds()
-    return (this.resources()?.stages ?? []).filter((stage) => open.has(stage.id)).length
+  protected readonly selectedStage = computed<ResourceStage | null>(() => {
+    const set = this.resources()
+    const id = this.selectedId()
+    if (!set || id === GENERAL) return null
+    return set.stages.find((stage) => stage.id === id) ?? set.stages[0] ?? null
   })
-  protected readonly allOpen = computed(
-    () => this.stageCount() > 0 && this.openCount() === this.stageCount(),
-  )
+
+  protected readonly showingGeneral = computed(() => this.selectedId() === GENERAL)
+
+  protected readonly groups = computed(() => {
+    const stage = this.selectedStage()
+    if (!stage) return []
+    const filter = this.filter()
+    return stage.steps
+      .map((step) => ({ step, items: step.resources.filter((item) => matchesFilter(item, filter)) }))
+      .filter((group) => filter === 'all' || group.items.length > 0)
+  })
+
+  protected readonly generalItems = computed(() => {
+    const filter = this.filter()
+    return (this.resources()?.general ?? []).filter((item) => matchesFilter(item, filter))
+  })
 
   constructor() {
     void this.skills.load()
@@ -71,7 +100,9 @@ export class ResourcesPage {
     try {
       const response = await this.api.getResources(slug)
       this.resources.set(response.resources)
-      this.openStageIds.set(new Set<string>())
+      const first =
+        response.resources.stages.find((stage) => this.countIn(stage) > 0) ?? response.resources.stages[0]
+      this.selectedId.set(first?.id ?? (response.resources.general.length > 0 ? GENERAL : null))
     } catch (error: unknown) {
       const message = describeHttpError(error)
       if (message === 'Not found.' || message === 'Skill not found') this.missing.set(true)
@@ -81,36 +112,31 @@ export class ResourcesPage {
     }
   }
 
-  protected isOpen(stageId: string): boolean {
-    return this.openStageIds().has(stageId)
-  }
-
-  protected toggleStage(stageId: string): void {
-    const next = new Set(this.openStageIds())
-    if (!next.delete(stageId)) next.add(stageId)
-    this.openStageIds.set(next)
-  }
-
-  protected toggleAll(): void {
-    if (this.allOpen()) {
-      this.openStageIds.set(new Set<string>())
-      return
-    }
-    this.openStageIds.set(new Set((this.resources()?.stages ?? []).map((stage) => stage.id)))
+  protected select(id: string): void {
+    this.selectedId.set(id)
   }
 
   protected countIn(stage: ResourceStage): number {
     return stage.steps.reduce((total, step) => total + step.resources.length, 0)
   }
 
-  protected sourceLabel(resource: Resource): string {
-    return resource.sourceType ? SOURCE_LABEL[resource.sourceType] : 'link'
+  protected label(resource: Resource): string {
+    return resourceLabel(resource)
   }
 
-  protected hrefFor(resource: Resource): string {
-    if (resource.url) return resource.url
-    const query = encodeURIComponent(resource.searchQuery ?? resource.title)
-    return `https://duckduckgo.com/?q=${query}`
+  protected icon(resource: Resource): IconName {
+    return resourceIcon(resource)
   }
 
+  protected hue(resource: Resource): string {
+    return resourceHue(resource)
+  }
+
+  protected host(resource: Resource): string {
+    return resourceHost(resource)
+  }
+
+  protected href(resource: Resource): string {
+    return resourceHref(resource)
+  }
 }

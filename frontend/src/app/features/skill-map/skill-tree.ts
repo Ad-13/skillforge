@@ -21,6 +21,8 @@ export class SkillTree {
 
   readonly expand = output<string>()
   readonly promote = output<string>()
+  readonly select = output<string>()
+  readonly selectedId = input<string | null>(null)
 
   protected readonly layout = computed(() => layoutSkillMap(this.root(), this.collapsedIds()))
 
@@ -69,10 +71,15 @@ export class SkillTree {
   }
 
   protected onClick(node: LaidOutNode): void {
+    const wasSelected = this.selectedId() === node.id
+    this.select.emit(node.id)
+
     if (this.canExpand(node)) {
       this.expand.emit(node.id)
       return
     }
+
+    if (!wasSelected) return
 
     if (!node.expanded) return
 

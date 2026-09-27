@@ -1,47 +1,46 @@
 <nav class="crumbs">
-  <a routerLink="/">← All skills</a>
+  <a routerLink="/">Dashboard</a>
+  <span class="crumbs-sep">/</span>
+  <span>{{ title() }}</span>
+  <span class="crumbs-sep">/</span>
+  <span>Skill map</span>
 </nav>
 
-<header class="head">
-  <div class="head-text">
+<header class="page-head">
+  <div>
     <p class="eyebrow">Skill map</p>
     <h1>{{ title() }}</h1>
-
     @if (map(); as loaded) {
-      <p class="meta faint">
-        {{ loaded.nodeCount }} nodes
-        @if (generatedAt()) {
-          · started {{ generatedAt() }}
-        }
-        @if (loaded.generatedBy) {
-          · {{ loaded.generatedBy }}
-        }
+      <p class="page-lede">
+        {{ loaded.nodeCount }} nodes on this map
       </p>
     }
   </div>
 
-  <div class="head-actions">
-    @if (!missing()) {
-      <a class="btn btn--primary" [routerLink]="['/skills', slug(), 'roadmap']">
-        {{ skill()?.hasRoadmap ? 'Open plan' : 'Forge a plan' }}
+  @if (!missing()) {
+    <div class="page-actions">
+      @if (map()) {
+        <button
+          class="btn btn--ghost btn--sm"
+          type="button"
+          [disabled]="generating() || loading() || pendingNodeId() !== null"
+          (click)="generate()"
+        >
+          {{ generating() ? 'Forging…' : 'Start over' }}
+        </button>
+      }
+      @if (skill()?.hasRoadmap) {
+        <a class="btn btn--ghost btn--sm" [routerLink]="['/skills', slug(), 'resources']">
+          <sf-icon name="book" [size]="16" />
+          <span>Resources</span>
+        </a>
+      }
+      <a class="btn btn--primary btn--sm" [routerLink]="['/skills', slug(), 'roadmap']">
+        <span>{{ skill()?.hasRoadmap ? 'Open plan' : 'Forge a plan' }}</span>
+        <sf-icon name="arrow" [size]="16" />
       </a>
-    }
-
-    @if (!missing() && skill()?.hasRoadmap) {
-      <a class="btn btn--ghost" [routerLink]="['/skills', slug(), 'resources']">Resources</a>
-    }
-
-    @if (!missing() && map()) {
-      <button
-        class="btn btn--ghost"
-        type="button"
-        [disabled]="generating() || loading() || pendingNodeId() !== null"
-        (click)="generate()"
-      >
-        {{ generating() ? 'Forging…' : 'Start over' }}
-      </button>
-    }
-  </div>
+    </div>
+  }
 </header>
 
 @if (!missing()) {
@@ -80,17 +79,15 @@
     <div class="panel-body">
       <sf-rune name="HAGALAZ" [size]="34" />
       <h2>No such skill</h2>
-      <p class="muted">
-        Nothing here answers to “{{ slug() }}”. It may have been removed in another tab.
-      </p>
-      <a class="btn btn--ghost" routerLink="/">Back to all skills</a>
+      <p class="muted">Nothing here answers to “{{ slug() }}”. It may have been removed in another tab.</p>
+      <a class="btn btn--ghost" routerLink="/">Back to the dashboard</a>
     </div>
   </section>
 } @else if (generating()) {
   <section class="panel state">
     <div class="panel-body">
       <sf-rune-loader [size]="30" label="Carving the first level" />
-      <p class="muted wait">
+      <p class="muted">
         A language model is naming what belongs here. Everything below this level is generated
         later, one node at a time, when you open it.
       </p>
@@ -98,24 +95,114 @@
   </section>
 } @else if (loading()) {
   <section class="panel state">
-    <div class="panel-body">
-      <sf-rune-loader label="Reading the marks" />
-    </div>
+    <div class="panel-body"><sf-rune-loader label="Reading the marks" /></div>
   </section>
 } @else if (map()?.root) {
-  <section class="panel tree-panel">
-    <div class="panel-body">
-      <sf-skill-tree
-        [root]="map()!.root"
-        [rootSlug]="slug()"
-        [lens]="lens().lens"
-        [pendingId]="pendingNodeId()"
-        [promotingId]="promotingNodeId()"
-        (expand)="expand($event)"
-        (promote)="promote($event)"
-      />
-    </div>
-  </section>
+  <div class="map-layout">
+    <section class="panel canvas-panel">
+      <div class="silhouette" aria-hidden="true"></div>
+      <div class="canvas-body">
+        <sf-skill-tree
+          [root]="map()!.root"
+          [rootSlug]="slug()"
+          [lens]="lens().lens"
+          [pendingId]="pendingNodeId()"
+          [promotingId]="promotingNodeId()"
+          [selectedId]="selected()?.node?.id ?? null"
+          (expand)="expand($event)"
+          (promote)="promote($event)"
+          (select)="selectedId.set($event)"
+        />
+      </div>
+    </section>
+
+    @if (selected(); as current) {
+      <aside class="panel detail" [style.--hue]="relationColour(current.node.relation, current.depth)">
+        <div class="detail-head">
+          <sf-skill-badge [name]="current.node.label" [slug]="current.node.slug" size="lg" />
+          <div class="detail-title">
+            <p class="detail-relation">{{ relationLabel(current.node.relation, current.depth) }}</p>
+            <h2>{{ current.node.label }}</h2>
+          </div>
+        </div>
+
+        @if (current.node.summary) {
+          <p class="detail-summary">{{ current.node.summary }}</p>
+        } @else if (current.depth === 0) {
+          <p class="detail-summary">
+            The skill this map is built around. {{ lens().question }} — open any node to go one level
+            deeper.
+          </p>
+        }
+
+        @if (current.node.linked; as linked) {
+          <div class="detail-linked">
+            <p class="detail-label">{{ current.depth === 0 ? 'Your progress' : 'Already one of your skills' }}</p>
+            @if (linked.totalSteps > 0) {
+              <div class="detail-progress">
+                <span class="meter" [class.meter--gold]="current.depth === 0">
+                  <span class="meter-fill" [style.width.%]="percentOf(linked)"></span>
+                </span>
+                <span class="detail-pct">{{ percentOf(linked) }}%</span>
+              </div>
+              <p class="detail-note">{{ linked.completedSteps }} of {{ linked.totalSteps }} steps done</p>
+            } @else {
+              <p class="detail-note">No plan yet</p>
+            }
+            <div class="detail-actions">
+              @if (current.depth > 0) {
+                <a class="btn btn--ghost btn--sm" [routerLink]="['/skills', linked.slug]">
+                  <sf-icon name="map" [size]="16" />
+                  <span>Open map</span>
+                </a>
+              }
+              <a class="btn btn--primary btn--sm" [routerLink]="['/skills', linked.slug, 'roadmap']">
+                <span>{{ linked.hasRoadmap ? 'Open plan' : 'Forge a plan' }}</span>
+                <sf-icon name="arrow" [size]="16" />
+              </a>
+            </div>
+          </div>
+        } @else if (current.depth > 0) {
+          <div class="detail-actions">
+            <button
+              class="btn btn--primary btn--sm"
+              type="button"
+              [disabled]="promotingNodeId() !== null"
+              (click)="promote(current.node.id)"
+            >
+              <sf-icon name="plus" [size]="16" />
+              <span>{{ promotingNodeId() === current.node.id ? 'Adding…' : 'Add as a skill' }}</span>
+            </button>
+          </div>
+        }
+
+        @if (current.depth > 0 && !current.node.expanded) {
+          <button
+            class="btn btn--cyan detail-deeper"
+            type="button"
+            [disabled]="pendingNodeId() !== null"
+            (click)="expand(current.node.id)"
+          >
+            <sf-icon name="map" [size]="16" />
+            <span>{{ pendingNodeId() === current.node.id ? 'Opening…' : 'Open the next level' }}</span>
+          </button>
+        } @else if (current.node.children.length > 0) {
+          <div>
+            <p class="detail-label">Next level · {{ current.node.children.length }}</p>
+            <ul class="detail-children">
+              @for (child of current.node.children; track child.id) {
+                <li [style.--dot]="relationColour(child.relation, 1)">
+                  <button type="button" (click)="selectedId.set(child.id)">{{ child.label }}</button>
+                </li>
+              }
+            </ul>
+          </div>
+        } @else if (current.depth > 0) {
+          <p class="detail-note">Nothing further — this is where the branch ends.</p>
+        }
+      </aside>
+    }
+  </div>
 } @else {
   <section class="panel state">
     <div class="panel-body">

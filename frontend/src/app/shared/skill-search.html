@@ -1,0 +1,83 @@
+<div class="box" (focusout)="onFocusOut($event)">
+  <label class="field-wrap" [class.is-open]="showPanel()">
+    <sf-icon name="search" [size]="18" />
+    <span class="visually-hidden">Find a skill or add a new one</span>
+    <input
+      #input
+      type="text"
+      role="combobox"
+      autocomplete="off"
+      spellcheck="false"
+      maxlength="80"
+      placeholder="Find a skill or add a new one"
+      aria-autocomplete="list"
+      aria-controls="skill-options"
+      [attr.aria-expanded]="showPanel()"
+      [attr.aria-activedescendant]="showPanel() && options().length > 0 ? optionId(activeIndex()) : null"
+      [value]="query()"
+      (input)="onInput($any($event.target).value)"
+      (focus)="onFocus()"
+      (keydown)="onKey($event)"
+    />
+    <kbd>/</kbd>
+  </label>
+
+  @if (showPanel()) {
+    <div class="panel-pop">
+      @if (store.suggestion(); as suggestion) {
+        <div class="suggestion" role="status">
+          <p>
+            “{{ suggestion.from }}” is not a skill you can learn. Did you mean
+            <strong>{{ suggestion.name }}</strong>?
+          </p>
+          <p class="reason">{{ suggestion.reason }}</p>
+          <div class="suggestion-actions">
+            <button class="btn btn--primary btn--sm" type="button" (click)="accept()">
+              Add {{ suggestion.name }}
+            </button>
+            <button class="btn btn--ghost btn--sm" type="button" (click)="dismiss()">Keep typing</button>
+          </div>
+        </div>
+      } @else if (store.creating()) {
+        <p class="status">Checking “{{ query().trim() }}”…</p>
+      } @else {
+        @if (store.error(); as message) {
+          <p class="status status--error" role="alert">{{ message }}</p>
+        }
+
+        @if (options().length > 0) {
+          <ul class="options" id="skill-options" role="listbox" aria-label="Skills">
+            @if (query().trim().length === 0) {
+              <li class="group" role="presentation">Your skills</li>
+            }
+            @for (option of options(); track $index; let i = $index) {
+              <li
+                role="option"
+                tabindex="-1"
+                [id]="optionId(i)"
+                [attr.aria-selected]="i === activeIndex()"
+                [class.is-active]="i === activeIndex()"
+                [class.is-add]="option.kind === 'add'"
+                (mousedown)="$event.preventDefault()"
+                (mouseenter)="activeIndex.set(i)"
+                (click)="choose(option)"
+              >
+                @if (option.kind === 'skill') {
+                  <sf-skill-badge [name]="option.skill.name" [slug]="option.skill.slug" size="sm" />
+                  <span class="name">{{ option.skill.name }}</span>
+                  <span class="meta">
+                    {{ option.skill.totalSteps > 0 ? percent(option.skill) + '%' : 'no plan' }}
+                  </span>
+                } @else {
+                  <span class="add-mark"><sf-icon name="plus" [size]="16" /></span>
+                  <span class="name">Add “{{ option.name }}” as a new skill</span>
+                  <span class="meta">Enter</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      }
+    </div>
+  }
+</div>

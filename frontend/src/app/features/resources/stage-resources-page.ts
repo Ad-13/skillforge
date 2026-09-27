@@ -12,20 +12,15 @@ import { SkillForgeApi, describeHttpError } from '../../core/skillforge-api'
 import { SkillsStore } from '../../core/skills.store'
 import { RuneLoader } from '../../shared/rune-loader'
 import { Rune } from '../../shared/rune'
-import type { Resource, ResourceSourceType, ResourceStage } from '../../core/api.types'
+import { Icon, type IconName } from '../../shared/icon'
+import { resourceHost, resourceHref, resourceHue, resourceIcon, resourceLabel } from '../../shared/resource-display'
+import type { Resource, ResourceStage } from '../../core/api.types'
 
-const SOURCE_LABEL: Record<ResourceSourceType, string> = {
-  DOCS: 'docs',
-  ARTICLE: 'article',
-  VIDEO: 'video',
-  REPO: 'repo',
-  COURSE: 'course',
-}
 
 @Component({
   selector: 'sf-stage-resources-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Rune, RuneLoader],
+  imports: [RouterLink, Rune, RuneLoader, Icon],
   templateUrl: './stage-resources-page.html',
   styleUrl: './stage-resources-page.css',
 })
@@ -77,14 +72,24 @@ export class StageResourcesPage {
     }
   }
 
-  protected sourceLabel(resource: Resource): string {
-    return resource.sourceType ? SOURCE_LABEL[resource.sourceType] : 'link'
+  protected label(resource: Resource): string {
+    return resourceLabel(resource)
   }
 
-  protected hrefFor(resource: Resource): string {
-    if (resource.url) return resource.url
-    const query = encodeURIComponent(resource.searchQuery ?? resource.title)
-    return `https://duckduckgo.com/?q=${query}`
+  protected icon(resource: Resource): IconName {
+    return resourceIcon(resource)
+  }
+
+  protected hue(resource: Resource): string {
+    return resourceHue(resource)
+  }
+
+  protected host(resource: Resource): string {
+    return resourceHost(resource)
+  }
+
+  protected href(resource: Resource): string {
+    return resourceHref(resource)
   }
 
   protected async forge(): Promise<void> {

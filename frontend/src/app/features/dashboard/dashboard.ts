@@ -1,24 +1,29 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  DestroyRef,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core'
-import { NgTemplateOutlet } from '@angular/common'
-import { FormsModule } from '@angular/forms'
 import { Router, RouterLink } from '@angular/router'
 import { SkillsStore } from '../../core/skills.store'
 import { Rune } from '../../shared/rune'
 import { RuneLoader } from '../../shared/rune-loader'
-import { runeForSlug } from '../../shared/runes'
+import { Icon } from '../../shared/icon'
+import { SkillBadge } from '../../shared/skill-badge'
 import type { RejectedImport, Skill } from '../../core/api.types'
+
+type Filter = 'all' | 'active' | 'planned' | 'untouched' | 'finished'
+
+const DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+const TIME = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
 
 @Component({
   selector: 'sf-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, FormsModule, RouterLink, Rune, RuneLoader],
+  imports: [RouterLink, Rune, RuneLoader, Icon, SkillBadge],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
@@ -26,12 +31,13 @@ export class Dashboard implements OnInit {
   protected readonly store = inject(SkillsStore)
   private readonly router = inject(Router)
 
-  protected readonly draft = signal('')
-  protected readonly adding = signal(false)
-  protected readonly runeFor = runeForSlug
+  protected readonly now = signal(new Date())
+  protected readonly today = computed(() => DATE.format(this.now()))
+  protected readonly time = computed(() => TIME.format(this.now()))
 
   protected readonly justImported = signal<ReadonlySet<string>>(new Set<string>())
   protected readonly dropped = signal<RejectedImport[]>([])
+  protected readonly filter = signal<Filter>('all')
 
   protected readonly all = computed(() => this.store.skills())
 
@@ -48,6 +54,33 @@ export class Dashboard implements OnInit {
   )
 
   protected readonly untouched = computed(() => this.all().filter((skill) => !skill.hasRoadmap))
+
+  protected readonly tabs = computed(() =>
+    (
+      [
+        { id: 'all', label: 'All', count: this.all().length },
+        { id: 'active', label: 'In progress', count: this.active().length },
+        { id: 'planned', label: 'Planned', count: this.planned().length },
+        { id: 'untouched', label: 'No plan', count: this.untouched().length },
+        { id: 'finished', label: 'Finished', count: this.finished().length },
+      ] as const
+    ).filter((tab) => tab.id === 'all' || tab.count > 0),
+  )
+
+  protected readonly visible = computed(() => {
+    switch (this.filter()) {
+      case 'active':
+        return this.active()
+      case 'planned':
+        return this.planned()
+      case 'untouched':
+        return this.untouched()
+      case 'finished':
+        return this.finished()
+      default:
+        return this.all()
+    }
+  })
 
   protected readonly totalSteps = computed(() =>
     this.all().reduce((sum, skill) => sum + skill.totalSteps, 0),
@@ -73,6 +106,15 @@ export class Dashboard implements OnInit {
     )
   })
 
+  protected readonly imported = computed(() => {
+    const slugs = this.justImported()
+    return this.all().filter((skill) => slugs.has(skill.slug))
+  })
+
+  protected readonly showImport = computed(
+    () => this.imported().length > 0 || this.dropped().length > 0,
+  )
+
   constructor() {
     const state = this.router.getCurrentNavigation()?.extras.state as
       | { importedSlugs?: string[]; rejected?: RejectedImport[] }
@@ -80,6 +122,9 @@ export class Dashboard implements OnInit {
 
     if (state?.importedSlugs) this.justImported.set(new Set(state.importedSlugs))
     if (state?.rejected) this.dropped.set(state.rejected)
+
+    const timer = window.setInterval(() => this.now.set(new Date()), 15_000)
+    inject(DestroyRef).onDestroy(() => window.clearInterval(timer))
   }
 
   ngOnInit(): void {
@@ -94,24 +139,9 @@ export class Dashboard implements OnInit {
     return this.justImported().has(skill.slug)
   }
 
-  protected dismissDropped(): void {
+  protected dismissImport(): void {
+    this.justImported.set(new Set<string>())
     this.dropped.set([])
-  }
-
-  protected async submit(): Promise<void> {
-    if (this.adding()) return
-    this.adding.set(true)
-    try {
-      const skill = await this.store.add(this.draft())
-      if (skill) this.draft.set('')
-    } finally {
-      this.adding.set(false)
-    }
-  }
-
-  protected async accept(): Promise<void> {
-    const skill = await this.store.acceptSuggestion()
-    if (skill) this.draft.set('')
   }
 
   protected async remove(event: Event, slug: string): Promise<void> {

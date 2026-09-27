@@ -7,7 +7,7 @@
     <sf-rune name="RAIDO" [size]="14" />
     <strong>Helpful</strong>
   </span>
-  <span class="legend-hint faint">Click any node to open what lies beneath it.</span>
+  <span class="legend-hint faint">Click a node to select it or open its next level; click again to fold.</span>
 </div>
 
 <div class="scroller">
@@ -34,6 +34,7 @@
         [attr.data-depth]="node.depth === 0 ? 0 : 1"
         [attr.data-relation]="node.relation"
         [class.is-active]="activeId() === node.id"
+        [class.is-selected]="selectedId() === node.id"
         [class.is-mine]="node.origin === 'USER'"
         [class.is-open]="canExpand(node)"
         [class.is-folded]="node.collapsed"
@@ -48,7 +49,7 @@
         [style.--i]="i"
         [attr.title]="node.summary"
         [attr.role]="canExpand(node) || canFold(node) ? 'button' : null"
-        [attr.tabindex]="node.depth === 0 ? -1 : 0"
+        [attr.tabindex]="0"
         [attr.aria-expanded]="canFold(node) ? !node.collapsed : null"
         [attr.aria-label]="
           canExpand(node)

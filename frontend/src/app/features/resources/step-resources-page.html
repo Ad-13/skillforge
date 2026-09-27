@@ -1,44 +1,59 @@
 @if (workspace(); as ws) {
   <nav class="crumbs">
-    <a routerLink="/">← All skills</a>
-    <span class="faint">·</span>
+    <a routerLink="/">Dashboard</a>
+    <span class="crumbs-sep">/</span>
     <a [routerLink]="['/skills', slug()]">{{ ws.skillName }}</a>
-    <span class="faint">·</span>
+    <span class="crumbs-sep">/</span>
     <a [routerLink]="['/skills', slug(), 'roadmap']">Plan</a>
-    <span class="faint">·</span>
-    <a [routerLink]="['/skills', slug(), 'stages', ws.stage.id, 'resources']">
-      {{ ws.stage.title }}
-    </a>
+    <span class="crumbs-sep">/</span>
+    <a [routerLink]="['/skills', slug(), 'stages', ws.stage.id, 'resources']">{{ ws.stage.title }}</a>
   </nav>
 
-  <header class="head">
-    <div class="head-text">
-      <p class="eyebrow">Step resources</p>
+  <header class="hero" [class.is-complete]="ws.step.complete">
+    <div class="hero-text">
+      <p class="eyebrow">Stage {{ ws.stage.position + 1 }} · Step {{ ws.step.position + 1 }}</p>
       <h1>{{ ws.step.title }}</h1>
       @if (ws.step.summary) {
-        <p class="muted lede">{{ ws.step.summary }}</p>
+        <p class="hero-lede">{{ ws.step.summary }}</p>
       }
+      <div class="hero-meta">
+        @if (ws.step.complete) {
+          <span class="tag tag--success"><sf-icon name="check" [size]="13" />Completed</span>
+        } @else {
+          <span class="tag tag--gold">In progress</span>
+        }
+        <a class="hero-stage" [routerLink]="['/skills', slug(), 'stages', ws.stage.id, 'resources']">
+          {{ ws.stage.title }}
+        </a>
+      </div>
     </div>
-
-    <div class="head-actions">
-      <button
-        class="btn btn--quiet"
-        type="button"
-        [disabled]="!ws.previousStepId"
-        (click)="go(ws.previousStepId)"
-      >
-        ← Previous
-      </button>
-      <button
-        class="btn btn--quiet"
-        type="button"
-        [disabled]="!ws.nextStepId"
-        (click)="go(ws.nextStepId)"
-      >
-        Next →
-      </button>
-    </div>
+    <sf-rune class="hero-rune" name="ANSUZ" [size]="64" />
   </header>
+
+  <div class="tabs-line" role="tablist" aria-label="Step material">
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'links'"
+      [class.is-current]="tab() === 'links'"
+      (click)="selectTab('links')"
+    >
+      <sf-rune name="RAIDO" [size]="15" />
+      <span>Resources</span>
+      <span class="tab-count">{{ ws.links.length }}</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'notes'"
+      [class.is-current]="tab() === 'notes'"
+      (click)="selectTab('notes')"
+    >
+      <sf-rune name="ANSUZ" [size]="15" />
+      <span>Notes</span>
+      <span class="tab-count">{{ ws.notes.length }}</span>
+    </button>
+  </div>
 }
 
 @if (error()) {
@@ -65,226 +80,282 @@
     <div class="panel-body"><sf-rune-loader label="Reading the marks" /></div>
   </section>
 } @else if (workspace(); as ws) {
-  <section class="block">
-    <header class="block-head">
-      <h2 class="block-title">Links</h2>
-      <div class="block-actions">
-        <button class="btn btn--quiet" type="button" (click)="openLinkEditor()">Add a link</button>
-        <button
-          class="btn btn--ghost"
-          type="button"
-          [disabled]="forging() || saving()"
-          (click)="forge()"
-        >
-          {{ forging() ? 'Searching…' : ws.links.length > 0 ? 'Find again' : 'Find links' }}
-        </button>
+  @if (tab() === 'links') {
+    <section class="pane" role="tabpanel">
+      <div class="pane-head">
+        <p class="pane-hint">Anything you add yourself stays when you search again.</p>
+        <div class="pane-actions">
+          <button class="btn btn--ghost btn--sm" type="button" (click)="openLinkEditor()">
+            <sf-icon name="plus" [size]="16" />
+            <span>Add a link</span>
+          </button>
+          <button
+            class="btn btn--cyan btn--sm"
+            type="button"
+            [disabled]="forging() || saving()"
+            (click)="forge()"
+          >
+            <sf-icon name="spark" [size]="16" />
+            <span>{{ forging() ? 'Searching…' : ws.links.length > 0 ? 'Find again' : 'Find links' }}</span>
+          </button>
+        </div>
       </div>
-    </header>
 
-    @if (forging()) {
-      <div class="pending"><sf-rune-loader [size]="24" label="Looking for material" /></div>
-    } @else if (ws.links.length === 0) {
-      <p class="empty faint">
-        Nothing yet. “Find links” asks a model for documentation and articles covering this step;
-        anything you add by hand survives regenerating.
-      </p>
-    } @else {
-      <ul class="links">
-        @for (link of ws.links; track link.id) {
-          <li class="link" [class.is-removing]="removingId() === link.id">
-            <span class="link-kind">{{ sourceLabel(link) }}</span>
-            <a
-              class="link-title"
-              [href]="hrefFor(link)"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {{ link.title }}
-            </a>
-            @if (!link.url) {
-              <span class="link-search faint" title="No address, so this searches">search</span>
-            }
-            @if (link.origin === 'USER') {
-              <span class="tag">mine</span>
-            }
-            <button
-              class="icon-btn"
-              type="button"
-              [disabled]="removingId() !== null"
-              [attr.aria-label]="'Remove ' + link.title"
-              (click)="remove(link)"
-            >
-              ×
-            </button>
-          </li>
-        }
-      </ul>
-    }
-  </section>
+      @if (editor(); as ed) {
+        @if (ed.mode === 'link') {
+          <section class="panel editor">
+            <h2 class="editor-title">New link</h2>
 
-  <section class="block">
-    <header class="block-head">
-      <h2 class="block-title">Notes</h2>
-      <div class="block-actions">
-        <label class="btn btn--quiet import">
-          Import .md
-          <input
-            class="visually-hidden"
-            type="file"
-            accept=".md,.markdown,.txt,text/markdown,text/plain"
-            [disabled]="saving()"
-            (change)="importFile($event)"
-          />
-        </label>
-        <button
-          class="btn btn--primary"
-          type="button"
-          [disabled]="saving()"
-          (click)="openNoteEditor()"
-        >
-          Write a note
-        </button>
-      </div>
-    </header>
+            <div class="editor-grid">
+              <label class="field-label" for="link-title">Title</label>
+              <input
+                id="link-title"
+                class="field"
+                maxlength="200"
+                [ngModel]="ed.title"
+                (ngModelChange)="patchEditor({ title: $event })"
+              />
 
-    @if (ws.notes.length === 0) {
-      <p class="empty faint">
-        No notes yet. A note is Markdown — write one here, or import a file you already have.
-      </p>
-    } @else {
-      <ul class="notes">
-        @for (note of ws.notes; track note.id) {
-          <li class="note" [class.is-open]="isNoteOpen(note.id)">
-            <button
-              class="note-head"
-              type="button"
-              [attr.aria-expanded]="isNoteOpen(note.id)"
-              (click)="toggleNote(note.id)"
-            >
-              <span class="note-text">
-                <span class="note-title">{{ note.title }}</span>
-                @if (!isNoteOpen(note.id)) {
-                  <span class="note-preview faint">{{ preview(note) }}</span>
+              <label class="field-label" for="link-url">Address</label>
+              <input
+                id="link-url"
+                class="field"
+                type="url"
+                placeholder="https://…"
+                [ngModel]="ed.url"
+                (ngModelChange)="patchEditor({ url: $event })"
+              />
+
+              <label class="field-label" for="link-kind">Kind</label>
+              <select
+                id="link-kind"
+                class="field"
+                [ngModel]="ed.sourceType"
+                (ngModelChange)="patchEditor({ sourceType: $event })"
+              >
+                @for (type of sourceTypes; track type) {
+                  <option [value]="type">{{ type }}</option>
                 }
+              </select>
+            </div>
+
+            <div class="editor-actions">
+              <button
+                class="btn btn--primary"
+                type="button"
+                [disabled]="saving() || ed.title.trim().length === 0 || ed.url.trim().length === 0"
+                (click)="save()"
+              >
+                {{ saving() ? 'Saving…' : 'Save link' }}
+              </button>
+              <button class="btn btn--quiet" type="button" (click)="closeEditor()">Cancel</button>
+            </div>
+          </section>
+        }
+      }
+
+      @if (forging()) {
+        <section class="panel state">
+          <div class="panel-body"><sf-rune-loader [size]="24" label="Looking for material" /></div>
+        </section>
+      } @else if (ws.links.length === 0) {
+        <section class="panel state">
+          <div class="panel-body">
+            <sf-rune name="RAIDO" [size]="30" />
+            <p class="muted">
+              Nothing yet. “Find links” asks a model for documentation and articles that cover this
+              step.
+            </p>
+          </div>
+        </section>
+      } @else {
+        <ul class="links">
+          @for (link of ws.links; track link.id; let i = $index) {
+            <li class="link stagger" [style.--i]="i" [class.is-removing]="removingId() === link.id">
+              <span class="link-icon" [style.--hue]="hueFor(link)">
+                <sf-icon [name]="iconFor(link)" [size]="17" />
               </span>
-              <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true">
-                <polyline points="4,6 8,10 12,6" />
-              </svg>
-            </button>
-
-            @if (isNoteOpen(note.id)) {
-              <div class="note-body">
-                <sf-markdown [source]="note.content ?? ''" />
-                <div class="note-actions">
-                  <button class="btn btn--quiet" type="button" (click)="openNoteEditor(note)">
-                    Edit
-                  </button>
-                  <button
-                    class="btn btn--quiet"
-                    type="button"
-                    [disabled]="removingId() !== null"
-                    (click)="remove(note)"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            }
-          </li>
-        }
-      </ul>
-    }
-  </section>
-
-  @if (editor(); as ed) {
-    @if (ed.mode === 'note') {
-      <section class="editor">
-        <h2 class="block-title">{{ ed.id ? 'Edit note' : 'New note' }}</h2>
-
-        <label class="field-label" for="note-title">Title</label>
-        <input
-          id="note-title"
-          class="field"
-          maxlength="200"
-          [ngModel]="ed.title"
-          (ngModelChange)="patchEditor({ title: $event })"
-        />
-
-        <label class="field-label" for="note-body">Body — Markdown</label>
-        <textarea
-          id="note-body"
-          class="field area"
-          rows="16"
-          [ngModel]="ed.content"
-          (ngModelChange)="patchEditor({ content: $event })"
-        ></textarea>
-
-        @if (ed.content.trim().length > 0) {
-          <details class="preview">
-            <summary>Preview</summary>
-            <sf-markdown [source]="ed.content" />
-          </details>
-        }
-
-        <div class="editor-actions">
-          <button
-            class="btn btn--primary"
-            type="button"
-            [disabled]="saving() || ed.title.trim().length === 0 || ed.content.trim().length === 0"
-            (click)="save()"
-          >
-            {{ saving() ? 'Saving…' : 'Save note' }}
-          </button>
-          <button class="btn btn--quiet" type="button" (click)="closeEditor()">Cancel</button>
-        </div>
-      </section>
-    } @else if (ed.mode === 'link') {
-      <section class="editor">
-        <h2 class="block-title">New link</h2>
-
-        <label class="field-label" for="link-title">Title</label>
-        <input
-          id="link-title"
-          class="field"
-          maxlength="200"
-          [ngModel]="ed.title"
-          (ngModelChange)="patchEditor({ title: $event })"
-        />
-
-        <label class="field-label" for="link-url">Address</label>
-        <input
-          id="link-url"
-          class="field"
-          type="url"
-          placeholder="https://…"
-          [ngModel]="ed.url"
-          (ngModelChange)="patchEditor({ url: $event })"
-        />
-
-        <label class="field-label" for="link-kind">Kind</label>
-        <select
-          id="link-kind"
-          class="field"
-          [ngModel]="ed.sourceType"
-          (ngModelChange)="patchEditor({ sourceType: $event })"
-        >
-          @for (type of sourceTypes; track type) {
-            <option [value]="type">{{ type }}</option>
+              <a class="link-main" [href]="hrefFor(link)" target="_blank" rel="noopener noreferrer">
+                <span class="link-title">{{ link.title }}</span>
+                <span class="link-sub">{{ hostOf(link) }} · {{ sourceLabel(link) }}</span>
+              </a>
+              @if (link.origin === 'USER') {
+                <span class="tag tag--gold">mine</span>
+              } @else if (!link.url) {
+                <span class="tag">search</span>
+              }
+              <button
+                class="link-remove"
+                type="button"
+                [disabled]="removingId() !== null"
+                [attr.aria-label]="'Remove ' + link.title"
+                (click)="remove(link)"
+              >
+                <sf-icon name="x" [size]="16" />
+              </button>
+            </li>
           }
-        </select>
-
-        <div class="editor-actions">
+        </ul>
+      }
+    </section>
+  } @else {
+    <section class="pane" role="tabpanel">
+      <div class="pane-head">
+        <p class="pane-hint">Notes are Markdown — write one here or import a file you already have.</p>
+        <div class="pane-actions">
+          <label class="btn btn--ghost btn--sm import" [class.is-disabled]="saving()">
+            <sf-icon name="upload" [size]="16" />
+            <span>Import .md</span>
+            <input
+              class="visually-hidden"
+              type="file"
+              accept=".md,.markdown,.txt,text/markdown,text/plain"
+              [disabled]="saving()"
+              (change)="importFile($event)"
+            />
+          </label>
           <button
-            class="btn btn--primary"
+            class="btn btn--cyan btn--sm"
             type="button"
-            [disabled]="saving() || ed.title.trim().length === 0 || ed.url.trim().length === 0"
-            (click)="save()"
+            [disabled]="saving()"
+            (click)="openNoteEditor()"
           >
-            {{ saving() ? 'Saving…' : 'Save link' }}
+            <sf-icon name="edit" [size]="16" />
+            <span>Write a note</span>
           </button>
-          <button class="btn btn--quiet" type="button" (click)="closeEditor()">Cancel</button>
         </div>
-      </section>
-    }
+      </div>
+
+      @if (editor(); as ed) {
+        @if (ed.mode === 'note') {
+          <section class="panel editor">
+            <h2 class="editor-title">{{ ed.id ? 'Edit note' : 'New note' }}</h2>
+
+            <label class="field-label" for="note-title">Title</label>
+            <input
+              id="note-title"
+              class="field"
+              maxlength="200"
+              [ngModel]="ed.title"
+              (ngModelChange)="patchEditor({ title: $event })"
+            />
+
+            <label class="field-label" for="note-body">Body — Markdown</label>
+            <textarea
+              id="note-body"
+              class="field area"
+              rows="16"
+              [ngModel]="ed.content"
+              (ngModelChange)="patchEditor({ content: $event })"
+            ></textarea>
+
+            @if (ed.content.trim().length > 0) {
+              <details class="preview">
+                <summary>Preview</summary>
+                <sf-markdown [source]="ed.content" />
+              </details>
+            }
+
+            <div class="editor-actions">
+              <button
+                class="btn btn--primary"
+                type="button"
+                [disabled]="saving() || ed.title.trim().length === 0 || ed.content.trim().length === 0"
+                (click)="save()"
+              >
+                {{ saving() ? 'Saving…' : 'Save note' }}
+              </button>
+              <button class="btn btn--quiet" type="button" (click)="closeEditor()">Cancel</button>
+            </div>
+          </section>
+        }
+      }
+
+      @if (ws.notes.length === 0) {
+        <section class="panel state">
+          <div class="panel-body">
+            <sf-rune name="ANSUZ" [size]="30" />
+            <p class="muted">No notes for this step yet.</p>
+          </div>
+        </section>
+      } @else {
+        <ul class="notes">
+          @for (note of ws.notes; track note.id) {
+            <li class="note" [class.is-open]="isNoteOpen(note.id)">
+              <button
+                class="note-head"
+                type="button"
+                [attr.aria-expanded]="isNoteOpen(note.id)"
+                (click)="toggleNote(note.id)"
+              >
+                <span class="note-icon"><sf-icon name="note" [size]="17" /></span>
+                <span class="note-text">
+                  <span class="note-title">{{ note.title }}</span>
+                  @if (!isNoteOpen(note.id)) {
+                    <span class="note-preview">{{ preview(note) }}</span>
+                  }
+                </span>
+                <sf-icon class="chevron" name="chevron" [size]="18" />
+              </button>
+
+              @if (isNoteOpen(note.id)) {
+                <div class="note-body">
+                  <sf-markdown [source]="note.content ?? ''" />
+                  <div class="note-actions">
+                    <button class="btn btn--ghost btn--sm" type="button" (click)="openNoteEditor(note)">
+                      <sf-icon name="edit" [size]="15" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      class="btn btn--quiet btn--sm"
+                      type="button"
+                      [disabled]="removingId() !== null"
+                      (click)="remove(note)"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
   }
+
+  <nav class="step-nav" aria-label="Step navigation">
+    <button
+      class="btn btn--ghost"
+      type="button"
+      [disabled]="!ws.previousStepId"
+      (click)="go(ws.previousStepId)"
+    >
+      <sf-icon name="back" [size]="16" />
+      <span>Previous step</span>
+    </button>
+
+    <button
+      class="btn complete"
+      type="button"
+      [class.btn--primary]="!ws.step.complete"
+      [class.btn--cyan]="ws.step.complete"
+      [disabled]="completing()"
+      [attr.aria-pressed]="ws.step.complete"
+      (click)="toggleComplete()"
+    >
+      <sf-icon name="check" [size]="17" />
+      <span>{{ ws.step.complete ? 'Completed' : 'Mark as completed' }}</span>
+    </button>
+
+    <button
+      class="btn btn--ghost"
+      type="button"
+      [disabled]="!ws.nextStepId"
+      (click)="go(ws.nextStepId)"
+    >
+      <span>Next step</span>
+      <sf-icon name="arrow" [size]="16" />
+    </button>
+  </nav>
 }

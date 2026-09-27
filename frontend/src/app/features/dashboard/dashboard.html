@@ -1,212 +1,222 @@
-<header class="intro">
-  <p class="eyebrow">Your forge</p>
-  <h1>Skills</h1>
+<header class="page-head">
+  <div>
+    <p class="eyebrow">Dashboard</p>
+    <h1 class="today">
+      <span>{{ today() }}</span>
+      <span class="clock">{{ time() }}</span>
+    </h1>
+  </div>
 </header>
 
 @if (store.loading() && !store.loaded()) {
-  <div class="pending">
-    <sf-rune-loader label="Gathering your skills" />
-  </div>
+  <section class="panel state">
+    <div class="panel-body"><sf-rune-loader label="Gathering your skills" /></div>
+  </section>
 } @else {
-  @if (all().length > 0) {
-    <section class="stats">
-      <div class="stat">
-        <span class="stat-value">{{ all().length }}</span>
-        <span class="stat-label">skills</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value">{{ active().length }}</span>
-        <span class="stat-label">in progress</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value">{{ finished().length }}</span>
-        <span class="stat-label">finished</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value">{{ doneSteps() }}<span class="stat-of">/{{ totalSteps() }}</span></span>
-        <span class="stat-label">steps done</span>
-      </div>
-      <div class="stat stat--bar">
-        <span class="bar"><span class="bar-fill" [style.width.%]="overall()"></span></span>
-        <span class="stat-label">{{ overall() }}% overall</span>
-      </div>
-    </section>
-  }
+  @if (showImport()) {
+    <section class="import" role="status">
+      <div class="import-mark"><sf-icon name="inbox" [size]="20" /></div>
 
-  @if (dropped().length > 0) {
-    <section class="dropped" role="status">
-      <div class="dropped-head">
-        <p class="dropped-title">
-          Left out {{ dropped().length }} line(s) that were not skills
-        </p>
-        <button class="btn btn--quiet" type="button" (click)="dismissDropped()">Dismiss</button>
-      </div>
-      <ul class="dropped-list">
-        @for (item of dropped(); track item.raw) {
-          <li>
-            <span class="dropped-name">{{ item.raw }}</span>
-            <span class="faint">— {{ item.reason }}</span>
-          </li>
+      <div class="import-body">
+        @if (imported().length > 0) {
+          <div class="import-row">
+            <p class="import-title">
+              {{ imported().length }} {{ imported().length === 1 ? 'skill' : 'skills' }} added from CareerOS
+            </p>
+            <ul class="chips">
+              @for (skill of imported(); track skill.slug) {
+                <li>
+                  <a class="chip chip--added" [routerLink]="['/skills', skill.slug]">
+                    <sf-skill-badge [name]="skill.name" [slug]="skill.slug" size="xs" />
+                    <span>{{ skill.name }}</span>
+                    <sf-icon name="arrow" [size]="15" />
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
         }
-      </ul>
-    </section>
-  }
 
-  @if (resume(); as skill) {
-    <section class="resume">
-      <div class="resume-text">
-        <p class="eyebrow">Pick up where you left off</p>
-        <h2 class="resume-title">{{ skill.name }}</h2>
-        @if (skill.nextStep; as step) {
-          <p class="resume-step">
-            Next: <strong>{{ step.title }}</strong>
-            <span class="faint"> · {{ step.stageTitle }}</span>
-          </p>
+        @if (dropped().length > 0) {
+          <div class="import-row">
+            <p class="import-title">
+              {{ dropped().length }} {{ dropped().length === 1 ? 'item was' : 'items were' }} left out
+            </p>
+            <ul class="chips">
+              @for (item of dropped(); track item.raw) {
+                <li class="chip chip--dropped">
+                  <sf-icon name="x" [size]="14" />
+                  <span class="chip-name">{{ item.raw }}</span>
+                  <span class="chip-reason">{{ item.reason }}</span>
+                </li>
+              }
+            </ul>
+          </div>
         }
       </div>
-      <div class="resume-actions">
-        <a class="btn btn--primary" [routerLink]="['/skills', skill.slug, 'roadmap']">Open plan</a>
-        <a class="btn btn--ghost" [routerLink]="['/skills', skill.slug]">Map</a>
-      </div>
+
+      <button class="btn btn--quiet import-close" type="button" aria-label="Dismiss" (click)="dismissImport()">
+        <sf-icon name="x" [size]="18" />
+      </button>
     </section>
   }
-
-  <form class="add" (ngSubmit)="submit()">
-    <label class="visually-hidden" for="skill-name">Skill name</label>
-    <input
-      id="skill-name"
-      class="field"
-      name="skillName"
-      autocomplete="off"
-      maxlength="80"
-      placeholder="Angular, PostgreSQL, Docker…"
-      [ngModel]="draft()"
-      (ngModelChange)="draft.set($event)"
-    />
-    <button
-      class="btn btn--primary"
-      type="submit"
-      [disabled]="store.creating() || draft().trim().length === 0"
-    >
-      {{ store.creating() ? 'Checking…' : 'Add skill' }}
-    </button>
-  </form>
 
   @if (store.error()) {
     <p class="error" role="alert">{{ store.error() }}</p>
   }
 
-  @if (store.suggestion(); as suggestion) {
-    <div class="suggestion" role="status">
-      <p class="suggestion-text">
-        “{{ suggestion.from }}” is not a skill anyone can learn. Did you mean
-        <strong>{{ suggestion.name }}</strong>?
-      </p>
-      <p class="suggestion-reason faint">{{ suggestion.reason }}</p>
-      <div class="suggestion-actions">
-        <button class="btn btn--primary" type="button" (click)="accept()">
-          Yes, add {{ suggestion.name }}
-        </button>
-        <button class="btn btn--ghost" type="button" (click)="store.dismissSuggestion()">
-          No, I meant what I typed
-        </button>
-      </div>
-    </div>
-  }
-
   @if (store.isEmpty()) {
-    <section class="panel empty">
+    <section class="panel state">
       <div class="panel-body">
-        <sf-rune name="FEHU" [size]="34" />
+        <sf-rune name="FEHU" [size]="36" />
         <h2>Nothing forged yet</h2>
         <p class="muted">
-          Add your first skill above. Angular is a good one to start with if you want to see what
-          a generated map looks like.
+          Type a skill into the search at the top — Angular, PostgreSQL, Docker — and press Enter. It
+          appears here with a map, and a plan once you forge one.
         </p>
       </div>
     </section>
   } @else {
-    <ng-container
-      [ngTemplateOutlet]="group"
-      [ngTemplateOutletContext]="{ title: 'In progress', list: active(), tone: 'accent' }"
-    />
-    <ng-container
-      [ngTemplateOutlet]="group"
-      [ngTemplateOutletContext]="{ title: 'Planned, not started', list: planned(), tone: 'plain' }"
-    />
-    <ng-container
-      [ngTemplateOutlet]="group"
-      [ngTemplateOutletContext]="{ title: 'No plan yet', list: untouched(), tone: 'plain' }"
-    />
-    <ng-container
-      [ngTemplateOutlet]="group"
-      [ngTemplateOutletContext]="{ title: 'Finished', list: finished(), tone: 'done' }"
-    />
-  }
-}
+    <section class="stats">
+      <div class="panel stat">
+        <sf-rune class="stat-rune" name="FEHU" [size]="22" />
+        <span class="stat-value">{{ all().length }}</span>
+        <span class="stat-label">Skills</span>
+      </div>
+      <div class="panel stat">
+        <sf-rune class="stat-rune" name="RAIDO" [size]="22" />
+        <span class="stat-value">{{ active().length }}</span>
+        <span class="stat-label">In progress</span>
+      </div>
+      <div class="panel stat">
+        <sf-rune class="stat-rune" name="TIWAZ" [size]="22" />
+        <span class="stat-value">{{ finished().length }}</span>
+        <span class="stat-label">Finished</span>
+      </div>
+      <div class="panel stat">
+        <sf-rune class="stat-rune" name="BERKANAN" [size]="22" />
+        <span class="stat-value">
+          {{ doneSteps() }}<span class="stat-of">/{{ totalSteps() }}</span>
+        </span>
+        <span class="stat-label">Steps done · {{ overall() }}%</span>
+        <span class="meter meter--gold stat-meter">
+          <span class="meter-fill" [style.width.%]="overall()"></span>
+        </span>
+      </div>
+    </section>
 
-<ng-template #group let-title="title" let-list="list" let-tone="tone">
-  @if (list.length > 0) {
-    <section class="group" [attr.data-tone]="tone">
-      <h2 class="group-title">
-        {{ title }}
-        <span class="group-count">{{ list.length }}</span>
-      </h2>
+    <div class="columns" [class.columns--single]="!resume()">
+      @if (resume(); as skill) {
+        <section class="panel journey">
+          <header class="panel-head">
+            <h2 class="panel-title">Continue your journey</h2>
+          </header>
 
-      <ul class="skills">
-        @for (skill of list; track skill.slug; let i = $index) {
-          <li class="stagger" [style.--i]="i">
-            <a class="row" [routerLink]="['/skills', skill.slug]">
-              <span class="row-rune"><sf-rune [name]="runeFor(skill.slug)" [size]="22" /></span>
+          <div class="journey-card">
+            <div class="journey-head">
+              <sf-skill-badge [name]="skill.name" [slug]="skill.slug" size="lg" />
+              <div class="journey-text">
+                <a class="journey-name" [routerLink]="['/skills', skill.slug]">{{ skill.name }}</a>
+                @if (skill.nextStep; as step) {
+                  <span class="journey-stage">{{ step.stageTitle }}</span>
+                }
+              </div>
+            </div>
 
-              <span class="row-main">
-                <span class="row-name">
-                  {{ skill.name }}
-                  @if (isNew(skill)) {
-                    <span class="tag tag--accent">new</span>
+            <div class="journey-progress">
+              <span class="meter"><span class="meter-fill" [style.width.%]="percent(skill)"></span></span>
+              <span class="journey-pct">{{ percent(skill) }}%</span>
+            </div>
+
+            @if (skill.nextStep; as step) {
+              <div class="next">
+                <span class="next-label">Next step</span>
+                <span class="next-title">{{ step.title }}</span>
+              </div>
+            }
+
+            <div class="journey-actions">
+              <a class="btn btn--ghost" [routerLink]="['/skills', skill.slug, 'resources']">
+                <sf-icon name="book" [size]="16" />
+                <span>Resources</span>
+              </a>
+              <a class="btn btn--primary" [routerLink]="['/skills', skill.slug, 'roadmap']">
+                <span>Continue</span>
+                <sf-icon name="arrow" [size]="16" />
+              </a>
+            </div>
+          </div>
+        </section>
+      }
+
+      <section class="panel skills">
+        <header class="panel-head">
+          <h2 class="panel-title">Your skills</h2>
+          <div class="tabs" role="tablist" aria-label="Filter skills">
+            @for (tab of tabs(); track tab.id) {
+              <button
+                type="button"
+                role="tab"
+                [attr.aria-selected]="filter() === tab.id"
+                [class.is-current]="filter() === tab.id"
+                (click)="filter.set(tab.id)"
+              >
+                {{ tab.label }}
+                <span class="tab-count">{{ tab.count }}</span>
+              </button>
+            }
+          </div>
+        </header>
+
+        <ul class="rows">
+          @for (skill of visible(); track skill.slug; let i = $index) {
+            <li class="stagger" [style.--i]="i">
+              <a class="row" [routerLink]="['/skills', skill.slug]">
+                <sf-skill-badge [name]="skill.name" [slug]="skill.slug" />
+
+                <span class="row-main">
+                  <span class="row-name">
+                    {{ skill.name }}
+                    @if (isNew(skill)) {
+                      <span class="tag tag--gold">new</span>
+                    }
+                  </span>
+                  @if (skill.nextStep; as step) {
+                    <span class="row-sub">Next: {{ step.title }}</span>
+                  } @else if (skill.totalSteps > 0 && skill.progress >= 1) {
+                    <span class="row-sub">All {{ skill.totalSteps }} steps done</span>
+                  } @else if (skill.mapLenses.length > 0) {
+                    <span class="row-sub">{{ skill.mapLenses.length }} of 3 maps · no plan yet</span>
+                  } @else {
+                    <span class="row-sub">No map or plan yet</span>
                   }
                 </span>
 
-                @if (skill.nextStep; as step) {
-                  <span class="row-next faint">Next: {{ step.title }}</span>
-                } @else {
-                  <span class="row-tags">
-                    @if (skill.mapLenses.length > 0) {
-                      <span class="tag">{{ skill.mapLenses.length }} of 3 maps</span>
-                    } @else {
-                      <span class="tag">no map</span>
-                    }
-                    @if (skill.source === 'CAREEROS') {
-                      <span class="tag">from careeros</span>
-                    }
-                  </span>
-                }
-              </span>
+                <span class="row-progress">
+                  @if (skill.totalSteps > 0) {
+                    <span class="meter" [class.meter--success]="skill.progress >= 1">
+                      <span class="meter-fill" [style.width.%]="percent(skill)"></span>
+                    </span>
+                    <span class="row-pct">{{ percent(skill) }}%</span>
+                  } @else {
+                    <span class="row-pct row-pct--none">no plan</span>
+                  }
+                </span>
 
-              <span class="row-progress" [attr.aria-label]="percent(skill) + ' percent complete'">
-                @if (skill.totalSteps > 0) {
-                  <span class="bar">
-                    <span class="bar-fill" [style.width.%]="percent(skill)"></span>
-                  </span>
-                  <span class="bar-value">{{ percent(skill) }}%</span>
-                } @else {
-                  <span class="bar-value faint">no plan yet</span>
-                }
-              </span>
-
-              <button
-                class="btn btn--quiet row-remove"
-                type="button"
-                [attr.aria-label]="'Remove ' + skill.name"
-                [disabled]="store.isBusy(skill.slug)"
-                (click)="remove($event, skill.slug)"
-              >
-                ×
-              </button>
-            </a>
-          </li>
-        }
-      </ul>
-    </section>
+                <button
+                  class="row-remove"
+                  type="button"
+                  [attr.aria-label]="'Remove ' + skill.name"
+                  [disabled]="store.isBusy(skill.slug)"
+                  (click)="remove($event, skill.slug)"
+                >
+                  <sf-icon name="x" [size]="16" />
+                </button>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    </div>
   }
-</ng-template>
+}

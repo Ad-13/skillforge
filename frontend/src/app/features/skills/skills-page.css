@@ -1,0 +1,258 @@
+:host {
+  display: block;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 16rem;
+  max-width: 22rem;
+  height: 2.5rem;
+  padding: 0 var(--space-3);
+  border: var(--hairline) solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgb(11 27 39 / 0.75);
+  color: var(--ink-faint);
+}
+
+.filter:focus-within {
+  border-color: var(--line-strong);
+}
+
+.filter input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--ink);
+}
+
+.filter input::placeholder {
+  color: var(--ink-faint);
+}
+
+.list {
+  padding: var(--space-2) 22px var(--space-3);
+}
+
+.list-head,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 7rem minmax(8rem, 1fr) 8rem 10rem;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.list-head {
+  padding: var(--space-3) var(--space-2);
+  border-bottom: var(--hairline) solid var(--line);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-disabled);
+}
+
+.row {
+  padding: var(--space-3) var(--space-2);
+  border-bottom: var(--hairline) solid var(--line);
+  border-radius: var(--radius);
+  transition: background var(--dur) var(--ease-out);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row:hover {
+  background: rgb(16 37 50 / 0.5);
+}
+
+.row.is-confirming {
+  display: block;
+  background: var(--danger-dim);
+  border-color: transparent;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  color: var(--ink);
+}
+
+.who:hover {
+  text-decoration: none;
+}
+
+.who:hover .who-name {
+  color: var(--gold-bright);
+}
+
+.who-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.who-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  transition: color var(--dur) var(--ease-out);
+}
+
+.who-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}
+
+.lenses {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lens-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: var(--hairline) solid var(--line-strong);
+}
+
+.lens-dot.is-on {
+  border-color: transparent;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgb(97 213 232 / 0.6);
+}
+
+.lens-count {
+  margin-left: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--ink-faint);
+}
+
+.plan {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.plan .meter {
+  flex: 1;
+}
+
+.plan-pct,
+.when {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+
+.plan-none {
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.act {
+  display: grid;
+  place-items: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: var(--radius);
+  color: var(--ink-faint);
+  transition:
+    color var(--dur) var(--ease-out),
+    background var(--dur) var(--ease-out);
+}
+
+.act:hover {
+  text-decoration: none;
+  color: var(--gold-bright);
+  background: var(--gold-dim);
+}
+
+.act--danger:hover {
+  color: var(--danger);
+  background: var(--danger-dim);
+}
+
+.confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  animation: rise-in var(--dur) var(--ease-out) both;
+}
+
+.confirm-text {
+  flex: 1 1 20rem;
+  color: var(--ink-muted);
+}
+
+.confirm-text strong {
+  color: var(--ink);
+}
+
+.confirm-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.empty {
+  padding: var(--space-5) var(--space-2);
+  color: var(--ink-faint);
+}
+
+@media (max-width: 980px) {
+  .list-head {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: var(--space-2);
+  }
+
+  .lenses,
+  .when {
+    display: none;
+  }
+
+  .who {
+    grid-column: 1 / -1;
+  }
+
+  .plan {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .actions {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}

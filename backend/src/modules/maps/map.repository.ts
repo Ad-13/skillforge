@@ -1,8 +1,19 @@
 import crypto from 'node:crypto'
 import { prisma } from '../../lib/prisma.ts'
+import { canonicalise } from '../../lib/canonical.ts'
 import type { AcceptedChild, MapLensName } from '../ai/expansion.guard.ts'
 
 const nodeOrder = [{ position: 'asc' as const }]
+
+const slugsOf = (rows: readonly { slug: string; label: string }[]): string[] => {
+  const slugs = new Set<string>()
+  for (const row of rows) {
+    slugs.add(row.slug)
+    const canonical = canonicalise(row.label).slug
+    if (canonical.length > 0) slugs.add(canonical)
+  }
+  return [...slugs]
+}
 
 export const mapRepository = {
   findByLens(userSkillId: string, lens: MapLensName) {
@@ -104,9 +115,18 @@ export const mapRepository = {
   async slugsInMap(skillMapId: string): Promise<string[]> {
     const rows = await prisma.skillMapNode.findMany({
       where: { skillMapId },
-      select: { slug: true },
+      select: { slug: true, label: true },
     })
-    return rows.map((row) => row.slug)
+    return slugsOf(rows)
+  },
+
+  async labelsInMap(skillMapId: string): Promise<string[]> {
+    const rows = await prisma.skillMapNode.findMany({
+      where: { skillMapId },
+      select: { label: true },
+      orderBy: nodeOrder,
+    })
+    return rows.map((row) => row.label)
   },
 
   async linkNodesBySlug(userId: string, slug: string, userSkillId: string): Promise<number> {
@@ -132,11 +152,11 @@ export const mapRepository = {
   async childrenOf(parentId: string): Promise<{ slugs: string[]; nextPosition: number }> {
     const rows = await prisma.skillMapNode.findMany({
       where: { parentId },
-      select: { slug: true, position: true },
+      select: { slug: true, label: true, position: true },
     })
 
     return {
-      slugs: rows.map((row) => row.slug),
+      slugs: slugsOf(rows),
       nextPosition: rows.reduce((max, row) => Math.max(max, row.position + 1), 0),
     }
   },

@@ -1,12 +1,12 @@
 import { hierarchy, tree } from 'd3-hierarchy'
 import type { LinkedSkill, MapNode, NodeRelation } from '../../core/api.types'
 
-const ROOT_WIDTH = 190
-const NODE_WIDTH = 218
+const ROOT_WIDTH = 200
+const NODE_WIDTH = 232
 const COLUMN_GAP = 62
 
-const ROOT_HEIGHT = 74
-const NODE_HEIGHT = 92
+const ROOT_HEIGHT = 84
+const NODE_HEIGHT = 108
 
 const LINK_ROW = 26
 

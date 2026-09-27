@@ -1,0 +1,158 @@
+<header class="page-head">
+  <div>
+    <p class="eyebrow">My skills</p>
+    <h1>Skills</h1>
+    <p class="page-lede">
+      Everything you are learning in one list. Open a skill’s map, plan or resources, or remove the
+      ones you no longer need.
+    </p>
+  </div>
+</header>
+
+@if (store.error()) {
+  <p class="error" role="alert">{{ store.error() }}</p>
+}
+
+@if (store.loading() && !store.loaded()) {
+  <section class="panel state">
+    <div class="panel-body"><sf-rune-loader label="Gathering your skills" /></div>
+  </section>
+} @else if (store.isEmpty()) {
+  <section class="panel state">
+    <div class="panel-body">
+      <sf-rune name="FEHU" [size]="36" />
+      <h2>No skills yet</h2>
+      <p class="muted">Use “New skill” at the top to add the first one.</p>
+    </div>
+  </section>
+} @else {
+  <div class="toolbar">
+    <label class="filter">
+      <sf-icon name="search" [size]="16" />
+      <span class="visually-hidden">Filter by name</span>
+      <input
+        type="text"
+        placeholder="Filter by name"
+        autocomplete="off"
+        [value]="query()"
+        (input)="query.set($any($event.target).value)"
+      />
+    </label>
+
+    <div class="tabs" role="tablist" aria-label="Filter by status">
+      @for (tab of tabs(); track tab.id) {
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="filter() === tab.id"
+          [class.is-current]="filter() === tab.id"
+          (click)="filter.set(tab.id)"
+        >
+          {{ tab.label }}
+          <span class="tab-count">{{ tab.count }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Sort">
+      <button type="button" role="tab" [class.is-current]="sort() === 'name'" (click)="sort.set('name')">A–Z</button>
+      <button type="button" role="tab" [class.is-current]="sort() === 'recent'" (click)="sort.set('recent')">Recent</button>
+      <button type="button" role="tab" [class.is-current]="sort() === 'progress'" (click)="sort.set('progress')">Progress</button>
+    </div>
+  </div>
+
+  <section class="panel list">
+    <div class="list-head" aria-hidden="true">
+      <span>Skill</span>
+      <span>Maps</span>
+      <span>Plan</span>
+      <span>Last activity</span>
+      <span></span>
+    </div>
+
+    @if (visible().length === 0) {
+      <p class="empty">Nothing matches this filter.</p>
+    }
+
+    <ul>
+      @for (skill of visible(); track skill.slug; let i = $index) {
+        <li class="row stagger" [style.--i]="i" [class.is-confirming]="confirming() === skill.slug">
+          @if (confirming() === skill.slug) {
+            <div class="confirm" role="alertdialog" [attr.aria-label]="'Remove ' + skill.name">
+              <sf-skill-badge [name]="skill.name" [slug]="skill.slug" />
+              <p class="confirm-text">
+                Remove <strong>{{ skill.name }}</strong>? Its maps, plan, progress, links and notes
+                are deleted. Nodes on other maps that point to it stay, just without the link.
+              </p>
+              <div class="confirm-actions">
+                <button class="btn btn--sm" type="button" (click)="cancelRemove()">Keep it</button>
+                <button
+                  class="btn btn--sm btn--danger"
+                  type="button"
+                  [disabled]="store.isBusy(skill.slug)"
+                  (click)="remove(skill.slug)"
+                >
+                  {{ store.isBusy(skill.slug) ? 'Removing…' : 'Remove' }}
+                </button>
+              </div>
+            </div>
+          } @else {
+            <a class="who" [routerLink]="['/skills', skill.slug]">
+              <sf-skill-badge [name]="skill.name" [slug]="skill.slug" />
+              <span class="who-text">
+                <span class="who-name">{{ skill.name }}</span>
+                <span class="who-meta">
+                  @if (skill.source === 'CAREEROS') {
+                    <span class="tag tag--accent">CareerOS</span>
+                  }
+                  <span>Added {{ dateOf(skill.createdAt) }}</span>
+                </span>
+              </span>
+            </a>
+
+            <span class="lenses" [attr.aria-label]="skill.mapLenses.length + ' of 3 maps'">
+              @for (lens of lenses; track lens.lens) {
+                <span class="lens-dot" [class.is-on]="hasLens(skill, lens.lens)" [attr.title]="lens.title"></span>
+              }
+              <span class="lens-count">{{ skill.mapLenses.length }}/3</span>
+            </span>
+
+            <span class="plan">
+              @if (skill.totalSteps > 0) {
+                <span class="meter" [class.meter--success]="state(skill) === 'finished'">
+                  <span class="meter-fill" [style.width.%]="percent(skill)"></span>
+                </span>
+                <span class="plan-pct">{{ percent(skill) }}%</span>
+              } @else {
+                <span class="plan-none">No plan yet</span>
+              }
+            </span>
+
+            <span class="when">{{ dateOf(skill.lastActivityAt) }}</span>
+
+            <span class="actions">
+              <a class="act" [routerLink]="['/skills', skill.slug]" [attr.aria-label]="'Map of ' + skill.name" title="Skill map">
+                <sf-icon name="map" [size]="17" />
+              </a>
+              <a class="act" [routerLink]="['/skills', skill.slug, 'roadmap']" [attr.aria-label]="'Plan for ' + skill.name" title="Plan">
+                <sf-icon name="plan" [size]="17" />
+              </a>
+              <a class="act" [routerLink]="['/skills', skill.slug, 'resources']" [attr.aria-label]="'Resources for ' + skill.name" title="Resources">
+                <sf-icon name="book" [size]="17" />
+              </a>
+              <button
+                class="act act--danger"
+                type="button"
+                [attr.aria-label]="'Remove ' + skill.name"
+                title="Remove"
+                (click)="askRemove(skill.slug)"
+              >
+                <sf-icon name="trash" [size]="17" />
+              </button>
+            </span>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}

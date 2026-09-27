@@ -13,15 +13,12 @@ import { SkillForgeApi, describeHttpError } from '../../core/skillforge-api'
 import { RuneLoader } from '../../shared/rune-loader'
 import { Rune } from '../../shared/rune'
 import { Markdown } from '../../shared/markdown'
+import { Icon, type IconName } from '../../shared/icon'
+import { resourceHost, resourceHref, resourceHue, resourceIcon, resourceLabel } from '../../shared/resource-display'
+import { SkillsStore } from '../../core/skills.store'
 import type { Resource, ResourceSourceType, StepWorkspace } from '../../core/api.types'
 
-const SOURCE_LABEL: Record<ResourceSourceType, string> = {
-  DOCS: 'docs',
-  ARTICLE: 'article',
-  VIDEO: 'video',
-  REPO: 'repo',
-  COURSE: 'course',
-}
+type Tab = 'links' | 'notes'
 
 type Editor =
   | { mode: 'closed' }
@@ -31,7 +28,7 @@ type Editor =
 @Component({
   selector: 'sf-step-resources-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, Rune, RuneLoader, Markdown],
+  imports: [FormsModule, RouterLink, Rune, RuneLoader, Markdown, Icon],
   templateUrl: './step-resources-page.html',
   styleUrl: './step-resources-page.css',
 })
@@ -41,6 +38,7 @@ export class StepResourcesPage {
 
   private readonly api = inject(SkillForgeApi)
   private readonly router = inject(Router)
+  private readonly skills = inject(SkillsStore)
 
   protected readonly sourceTypes: ResourceSourceType[] = [
     'DOCS',
@@ -58,6 +56,9 @@ export class StepResourcesPage {
   protected readonly error = signal<string | null>(null)
   protected readonly missing = signal(false)
   protected readonly notice = signal<string | null>(null)
+
+  protected readonly tab = signal<Tab>('links')
+  protected readonly completing = signal(false)
 
   protected readonly editor = signal<Editor>({ mode: 'closed' })
   private readonly openNoteIds = signal<ReadonlySet<string>>(new Set<string>())
@@ -107,14 +108,47 @@ export class StepResourcesPage {
   }
 
   protected sourceLabel(resource: Resource): string {
-    return resource.sourceType ? SOURCE_LABEL[resource.sourceType] : 'link'
+    return resourceLabel(resource)
+  }
+
+
+  protected iconFor(resource: Resource): IconName {
+    return resourceIcon(resource)
+  }
+
+
+  protected hueFor(resource: Resource): string {
+    return resourceHue(resource)
+  }
+
+
+  protected hostOf(resource: Resource): string {
+    return resourceHost(resource)
+  }
+
+
+  protected async toggleComplete(): Promise<void> {
+    const ws = this.workspace()
+    if (!ws || this.completing()) return
+
+    this.completing.set(true)
+    this.error.set(null)
+
+    try {
+      await this.api.setStepComplete(this.slug(), ws.step.id, !ws.step.complete)
+      this.workspace.set({ ...ws, step: { ...ws.step, complete: !ws.step.complete } })
+      void this.skills.load(true)
+    } catch (error: unknown) {
+      this.error.set(describeHttpError(error))
+    } finally {
+      this.completing.set(false)
+    }
   }
 
   protected hrefFor(resource: Resource): string {
-    if (resource.url) return resource.url
-    const query = encodeURIComponent(resource.searchQuery ?? resource.title)
-    return `https://duckduckgo.com/?q=${query}`
+    return resourceHref(resource)
   }
+
 
   protected preview(resource: Resource): string {
     const body = (resource.content ?? '').replace(/[#>*`_\-]/g, ' ').replace(/\s+/g, ' ').trim()
@@ -143,7 +177,14 @@ export class StepResourcesPage {
     }
   }
 
+  protected selectTab(tab: Tab): void {
+    if (this.tab() === tab) return
+    this.tab.set(tab)
+    this.editor.set({ mode: 'closed' })
+  }
+
   protected openNoteEditor(existing?: Resource): void {
+    this.tab.set('notes')
     this.notice.set(null)
     this.editor.set({
       mode: 'note',
@@ -154,6 +195,7 @@ export class StepResourcesPage {
   }
 
   protected openLinkEditor(): void {
+    this.tab.set('links')
     this.notice.set(null)
     this.editor.set({ mode: 'link', title: '', url: '', sourceType: 'ARTICLE' })
   }
@@ -226,6 +268,7 @@ export class StepResourcesPage {
         content,
       })
       await this.reload()
+      this.tab.set('notes')
       this.notice.set(`Imported “${created.resource.title}”.`)
     } catch (error: unknown) {
       this.error.set(describeHttpError(error))

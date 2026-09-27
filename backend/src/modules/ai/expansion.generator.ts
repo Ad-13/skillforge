@@ -81,7 +81,10 @@ const buildSystemPrompt = (lens: LensName, language: string): string => {
     '  further, contain nothing worth splitting, or have no ecosystem. Never',
     '  add an entry to reach a number.',
     '- Never return the TARGET itself, and never return anything listed under',
-    '  ALREADY ON THE PATH.',
+    '  ALREADY ON THE PATH or ALREADY ELSEWHERE IN THIS MAP, under any spelling.',
+    '- Never put a version or edition into a label. Write "JavaScript", not',
+    '  "JavaScript ES6+"; "HTML", not "HTML5"; "Angular", not "Angular 17".',
+    '  A version of a technology is not a separate thing to learn.',
   ].join('\n')
 }
 
@@ -91,6 +94,7 @@ export interface ExpandInput {
   goalName: string
   goalKind: SkillKindName
   pathNames: readonly string[]
+  mapNames: readonly string[]
   language: string
   context: ExpansionContext
 }
@@ -108,6 +112,12 @@ const buildUserPrompt = (input: ExpandInput, previousIssues: readonly string[]):
 
   if (input.pathNames.length > 0) {
     lines.push(`ALREADY ON THE PATH: ${input.pathNames.join(' → ')}`)
+  }
+
+  const path = new Set(input.pathNames.map((name) => name.toLowerCase()))
+  const elsewhere = input.mapNames.filter((name) => !path.has(name.toLowerCase())).slice(0, 80)
+  if (elsewhere.length > 0) {
+    lines.push(`ALREADY ELSEWHERE IN THIS MAP: ${elsewhere.join(', ')}`)
   }
 
   if (input.context.siblingSlugs.length > 0) {

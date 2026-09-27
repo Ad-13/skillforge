@@ -8,6 +8,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
   },
   {
+    path: 'skills',
+    pathMatch: 'full',
+    title: 'My skills · SkillForge',
+    loadComponent: () => import('./features/skills/skills-page').then((m) => m.SkillsPage),
+  },
+  {
     path: 'roadmap',
     title: 'Adding your skills · SkillForge',
     loadComponent: () =>

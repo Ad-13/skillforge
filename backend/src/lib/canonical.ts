@@ -115,6 +115,33 @@ const EDGE_NOISE = new Set([
 
 const TRAILING_VERSION = /-(?:v?\d+(?:-\d+)*)$/
 
+const VERSION_TOKEN = /-(?:es\d{1,4}|ecmascript(?:-\d+)?|v?\d+(?:-\d+)*(?:-x)?|x|latest|next)$/
+
+const STANDALONE_EDITION = /^(?:es\d{1,4}|ecmascript(?:-\d+)?|es-?next)$/
+
+const NAME_VERSION =
+  /(?:\s*[(]\s*(?:ES\s?\d{1,4}\+?|ECMAScript\s*\d*\+?|v?\d+(?:\.\d+)*(?:\.x)?\+?)\s*[)]|\s+(?:ES\s?\d{1,4}\+?|ECMAScript\s*\d*\+?|v?\d+(?:\.\d+)*(?:\.x)?\+?))$/i
+
+const stripVersions = (slug: string): string => {
+  let current = slug
+  while (VERSION_TOKEN.test(current)) {
+    const next = current.replace(VERSION_TOKEN, '')
+    if (next.length === 0) break
+    current = next
+  }
+  return current
+}
+
+const stripNameVersion = (name: string): string => {
+  let current = name
+  while (NAME_VERSION.test(current)) {
+    const next = current.replace(NAME_VERSION, '').trim()
+    if (next.length === 0) break
+    current = next
+  }
+  return current
+}
+
 const stripNoise = (slug: string): string => {
   let parts = slug.split('-').filter((part) => part.length > 0)
 
@@ -145,7 +172,19 @@ export const canonicalise = (raw: string): CanonicalName => {
 
   if (slug.length === 0) return { name: trimmed, slug: '', known: false }
 
-  const candidates = [slug, slug.replace(TRAILING_VERSION, ''), stripNoise(slug.replace(TRAILING_VERSION, ''))]
+  if (STANDALONE_EDITION.test(slug)) {
+    const javascript = BY_ALIAS.get('javascript') as CanonicalSkill
+    return { name: javascript.name, slug: javascript.slug, known: true }
+  }
+
+  const unversioned = stripVersions(slug)
+  const candidates = [
+    slug,
+    slug.replace(TRAILING_VERSION, ''),
+    unversioned,
+    stripNoise(slug.replace(TRAILING_VERSION, '')),
+    stripNoise(unversioned),
+  ]
 
   for (const candidate of candidates) {
     const hit = BY_ALIAS.get(candidate)
@@ -153,7 +192,8 @@ export const canonicalise = (raw: string): CanonicalName => {
   }
 
   const narrowed = candidates[candidates.length - 1] as string
-  return { name: trimmed, slug: narrowed.length > 0 ? narrowed : slug, known: false }
+  const name = stripNameVersion(trimmed)
+  return { name, slug: narrowed.length > 0 ? narrowed : slug, known: false }
 }
 
 export const canonicaliseOrThrow = (raw: string): CanonicalName => {

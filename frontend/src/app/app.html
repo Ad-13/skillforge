@@ -1,151 +1,203 @@
-<header class="shell-head">
-  <div class="head-row">
-    <a class="brand" routerLink="/">
-      <sf-rune name="ALGIZ" [size]="26" />
-      <span class="brand-name">SkillForge</span>
-    </a>
-
-    <nav class="head-actions">
-      <button
-        class="btn btn--ghost theme-toggle"
-        type="button"
-        [attr.aria-label]="'Theme: ' + themeLabel() + '. Change.'"
-        (click)="theme.next()"
-      >
-        <sf-rune [name]="themeRune()" [size]="15" />
-        <span>{{ themeLabel() }}</span>
-      </button>
-
-      @if (session.isAuthenticated()) {
-        <span class="who" [title]="session.user()!.sub">{{ session.displayName() }}</span>
-        <a class="btn btn--ghost" href="/auth/logout">Sign out</a>
-      } @else if (session.status() === 'anonymous') {
-        <a class="btn btn--primary" [href]="signInHref()">Sign in</a>
-      }
-    </nav>
-  </div>
-</header>
+<sf-starfield />
 
 @switch (session.status()) {
   @case ('authenticated') {
-    <div class="shell-body">
-      <aside class="rail">
-        <nav class="rail-nav" aria-label="Sections">
+    <div class="shell">
+      <aside class="side">
+        <a class="brand" routerLink="/">
+          <span class="brand-mark"><sf-rune name="ALGIZ" [size]="24" /></span>
+          <span class="brand-text">
+            <span class="brand-name">SkillForge</span>
+            <span class="brand-tag">Learn · Build · Grow</span>
+          </span>
+        </a>
+
+        <nav class="side-nav" aria-label="Sections">
           <a
-            class="rail-link"
+            class="nav"
             routerLink="/"
             routerLinkActive="is-current"
             [routerLinkActiveOptions]="{ exact: true }"
           >
-            <sf-rune name="FEHU" [size]="15" />
+            <sf-icon name="home" />
+            <span>Dashboard</span>
+          </a>
+
+          <a
+            class="nav"
+            routerLink="/skills"
+            routerLinkActive="is-current"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <sf-icon name="layers" />
             <span>My skills</span>
+            @if (skills.skills().length > 0) {
+              <span class="nav-count">{{ skills.skills().length }}</span>
+            }
           </a>
 
           @if (activeSlug(); as slug) {
-            <p class="rail-group">
-              <span class="rail-group-label">{{ activeName() }}</span>
-            </p>
+            <p class="side-label">Current skill</p>
 
-            <a class="rail-link" [routerLink]="['/skills', slug]" routerLinkActive="is-current"
-               [routerLinkActiveOptions]="{ exact: true }">
-              <sf-rune name="ALGIZ" [size]="15" />
+            <div class="current">
+              <sf-skill-badge [name]="activeName()" [slug]="slug" size="sm" />
+              <span class="current-name">{{ activeName() }}</span>
+              @if (activeSkill(); as skill) {
+                @if (skill.totalSteps > 0) {
+                  <span class="current-pct">{{ pct(skill) }}%</span>
+                }
+              }
+            </div>
+
+            <a
+              class="nav"
+              [routerLink]="['/skills', slug]"
+              routerLinkActive="is-current"
+              [routerLinkActiveOptions]="{ exact: true }"
+            >
+              <sf-icon name="map" />
               <span>Skill map</span>
             </a>
 
-            <a
-              class="rail-link"
-              [routerLink]="['/skills', slug, 'roadmap']"
-              routerLinkActive="is-current"
-            >
-              <sf-rune name="TIWAZ" [size]="15" />
+            <a class="nav" [routerLink]="['/skills', slug, 'roadmap']" routerLinkActive="is-current">
+              <sf-icon name="plan" />
               <span>Plan</span>
             </a>
 
             <a
-              class="rail-link"
+              class="nav"
               [routerLink]="['/skills', slug, 'resources']"
               routerLinkActive="is-current"
             >
-              <sf-rune name="BERKANAN" [size]="15" />
+              <sf-icon name="book" />
               <span>Resources</span>
             </a>
           }
         </nav>
 
         @if (skills.skills().length > 0) {
-          <div class="rail-skills">
-            <p class="rail-group"><span class="rail-group-label">Jump to</span></p>
-            <ul class="rail-list">
-              @for (skill of skills.skills().slice(0, 8); track skill.slug) {
+          <div class="jump">
+            <p class="side-label">Jump to</p>
+            <ul class="jump-list">
+              @for (skill of skills.skills().slice(0, 10); track skill.slug) {
                 <li>
                   <a
-                    class="rail-skill"
+                    class="jump-link"
                     [routerLink]="['/skills', skill.slug]"
                     [class.is-current]="skill.slug === activeSlug()"
                   >
-                    <span class="rail-skill-name">{{ skill.name }}</span>
-                    @if (skill.totalSteps > 0) {
-                      <span class="rail-skill-pct">{{ pct(skill) }}%</span>
-                    }
+                    <sf-skill-badge [name]="skill.name" [slug]="skill.slug" size="xs" />
+                    <span class="jump-name">{{ skill.name }}</span>
+                    <span class="jump-pct">{{ skill.totalSteps > 0 ? pct(skill) + '%' : '—' }}</span>
                   </a>
                 </li>
               }
             </ul>
           </div>
         }
+
+        <div class="side-foot">
+          <div class="ornament" aria-hidden="true">
+            <sf-rune name="TIWAZ" [size]="14" />
+            <span class="ornament-line"></span>
+            <sf-rune name="SOWILO" [size]="14" />
+            <span class="ornament-line"></span>
+            <sf-rune name="BERKANAN" [size]="14" />
+          </div>
+
+          @if (session.peerAppUrl(); as peer) {
+            <a class="peer" [href]="peer">
+              <span>Open CareerOS</span>
+              <sf-icon name="external" [size]="15" />
+            </a>
+          }
+        </div>
       </aside>
 
-      <main class="shell-main">
-        <router-outlet />
-      </main>
+      <div class="stage">
+        <header class="top">
+          <sf-skill-search />
+
+          <div class="top-gap"></div>
+
+          <div class="user">
+            <span class="avatar">
+              @if (session.user()?.pictureUrl; as picture) {
+                <img [src]="picture" alt="" referrerpolicy="no-referrer" />
+              } @else {
+                {{ userInitials() }}
+              }
+            </span>
+            <span class="user-name" [title]="userLabel()">{{ userLabel() }}</span>
+            <a class="btn btn--ghost btn--sm sign-out" href="/auth/logout">
+              <sf-icon name="logout" [size]="16" />
+              <span>Sign out</span>
+            </a>
+          </div>
+        </header>
+
+        <main class="main">
+          <router-outlet />
+        </main>
+
+        <div class="backdrop" aria-hidden="true"></div>
+      </div>
     </div>
   }
 
   @case ('anonymous') {
-    <main class="shell-main shell-main--plain">
-      <section class="panel gate">
-        <div class="panel-body">
-          <p class="eyebrow">Not signed in</p>
-          <h1>Forge what you are learning into a map.</h1>
-          <p class="muted gate-copy">
-            SkillForge keeps a map and a learning path for every skill you are working on.
-            Sign in with the shared account you use for CareerOS — the two applications share
-            one identity provider, so there is nothing new to register.
+    <div class="gate">
+      <sf-mountain-art class="gate-art" [focusX]="0.62" [focusY]="0.56">
+        <div class="gate-copy">
+          <p class="brand brand--gate">
+            <span class="brand-mark"><sf-rune name="ALGIZ" [size]="24" /></span>
+            <span class="brand-text">
+              <span class="brand-name">SkillForge</span>
+              <span class="brand-tag">Learn · Build · Grow</span>
+            </span>
           </p>
-          <a class="btn btn--primary gate-cta" [href]="signInHref()">Sign in</a>
+          <h1 class="gate-title">Your skills.<br />Your path.<br />Forged by you.</h1>
+          <p class="gate-lede">
+            A map of what each skill stands on, a plan of stages and steps, and your own links and
+            notes for every step.
+          </p>
+        </div>
+      </sf-mountain-art>
+
+      <section class="gate-side">
+        <div class="gate-card">
+          <p class="eyebrow">Welcome</p>
+          <h2 class="gate-card-title">Sign in to continue your journey</h2>
+          <a class="btn btn--primary gate-cta" [href]="signInHref()">
+            <span>Sign in</span>
+            <sf-icon name="arrow" [size]="17" />
+          </a>
+          <div class="divider" aria-hidden="true"><sf-icon name="diamond" [size]="12" /></div>
+          <p class="gate-fine">
+            One account for SkillForge and CareerOS.<br />
+            Google, GitHub or email on the next screen.
+          </p>
         </div>
       </section>
-    </main>
+    </div>
   }
 
   @case ('error') {
-    <main class="shell-main shell-main--plain">
-      <section class="panel gate">
+    <main class="solo">
+      <section class="panel state">
         <div class="panel-body">
+          <sf-rune name="HAGALAZ" [size]="34" />
           <p class="eyebrow">Something went wrong</p>
-          <h1>{{ session.error() }}</h1>
-          <button class="btn btn--ghost gate-cta" type="button" (click)="retry()">
-            Try again
-          </button>
+          <h1 class="solo-title">{{ session.error() }}</h1>
+          <button class="btn btn--ghost" type="button" (click)="retry()">Try again</button>
         </div>
       </section>
     </main>
   }
 
   @default {
-    <main class="shell-main shell-main--plain">
-      <div class="boot">
-        <sf-rune-loader label="Reading the marks" />
-      </div>
+    <main class="solo">
+      <sf-rune-loader label="Reading the marks" />
     </main>
   }
 }
-
-<footer class="shell-foot">
-  <div class="foot-row">
-    <span class="faint">Skill maps are generated, then yours to edit.</span>
-    @if (session.peerAppUrl()) {
-      <a [href]="session.peerAppUrl()">Open CareerOS →</a>
-    }
-  </div>
-</footer>

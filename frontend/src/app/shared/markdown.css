@@ -54,7 +54,8 @@
   bottom: 0.18em;
   width: 3px;
   border-radius: 2px;
-  background: var(--accent);
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold-glow);
 }
 
 .md h3 {

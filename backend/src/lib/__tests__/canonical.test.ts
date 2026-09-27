@@ -81,3 +81,28 @@ test('a name with no Latin characters is refused, not silently emptied', () => {
   assert.throws(() => canonicaliseOrThrow('Ангуляр'), /Latin/)
   assert.throws(() => canonicaliseOrThrow('!!!'), /Latin/)
 })
+
+test('an edition of JavaScript is JavaScript', () => {
+  assert.equal(slugOf('JavaScript ES6+'), 'javascript')
+  assert.equal(nameOf('JavaScript ES6+'), 'JavaScript')
+  assert.equal(slugOf('JavaScript (ES2015+)'), 'javascript')
+  assert.equal(slugOf('ES5'), 'javascript')
+  assert.equal(slugOf('ES2020'), 'javascript')
+  assert.equal(slugOf('ECMAScript 2015'), 'javascript')
+})
+
+test('a version number does not make a new skill', () => {
+  assert.equal(slugOf('HTML5'), 'html')
+  assert.equal(slugOf('Python 3.12'), 'python')
+  assert.equal(slugOf('Angular 17'), 'angular')
+  assert.equal(slugOf('Vite 5'), 'vite')
+  assert.equal(nameOf('Vite 5'), 'Vite')
+  assert.equal(nameOf('Webpack v5'), 'Webpack')
+})
+
+test('names that only look like versions are left alone', () => {
+  assert.equal(nameOf('OAuth 2.0'), 'OAuth 2.0')
+  assert.equal(slugOf('Web3'), 'web3')
+  assert.equal(nameOf('Web3'), 'Web3')
+  assert.equal(slugOf('Java'), 'java')
+})

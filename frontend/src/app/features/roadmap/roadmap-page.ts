@@ -12,12 +12,34 @@ import { SkillForgeApi, describeHttpError } from '../../core/skillforge-api'
 import { SkillsStore } from '../../core/skills.store'
 import { RuneLoader } from '../../shared/rune-loader'
 import { Rune } from '../../shared/rune'
-import type { Roadmap, RoadmapStage, RoadmapStep } from '../../core/api.types'
+import { Icon } from '../../shared/icon'
+import type { Roadmap, RoadmapStage, RoadmapStep, SkillResources } from '../../core/api.types'
+
+interface ResourceCounts {
+  stages: ReadonlyMap<string, number>
+  steps: ReadonlyMap<string, number>
+}
+
+const NO_COUNTS: ResourceCounts = { stages: new Map(), steps: new Map() }
+
+const countResources = (set: SkillResources): ResourceCounts => {
+  const stages = new Map<string, number>()
+  const steps = new Map<string, number>()
+  for (const stage of set.stages) {
+    let total = 0
+    for (const step of stage.steps) {
+      steps.set(step.id, step.resources.length)
+      total += step.resources.length
+    }
+    stages.set(stage.id, total)
+  }
+  return { stages, steps }
+}
 
 @Component({
   selector: 'sf-roadmap-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Rune, RuneLoader],
+  imports: [RouterLink, Rune, RuneLoader, Icon],
   templateUrl: './roadmap-page.html',
   styleUrl: './roadmap-page.css',
 })
@@ -35,6 +57,8 @@ export class RoadmapPage {
   protected readonly missing = signal(false)
   protected readonly added = signal<string[]>([])
 
+  protected readonly counts = signal<ResourceCounts>(NO_COUNTS)
+
   private readonly openStageIds = signal<ReadonlySet<string>>(new Set<string>())
 
   protected readonly skill = computed(() => this.skills.bySlug(this.slug()))
@@ -48,6 +72,17 @@ export class RoadmapPage {
     const at = this.roadmap()?.generatedAt
     return at ? new Date(at).toLocaleString() : null
   })
+
+  protected readonly currentStageId = computed(
+    () => this.roadmap()?.stages.find((stage) => !stage.complete)?.id ?? null,
+  )
+
+  protected readonly currentStepId = computed(
+    () =>
+      this.roadmap()
+        ?.stages.find((stage) => !stage.complete)
+        ?.steps.find((step) => !step.complete)?.id ?? null,
+  )
 
   protected readonly stageCount = computed(() => this.roadmap()?.stages.length ?? 0)
   protected readonly openCount = computed(() => {
@@ -72,6 +107,8 @@ export class RoadmapPage {
     this.error.set(null)
     this.missing.set(false)
 
+    void this.fetchCounts(slug)
+
     try {
       const response = await this.api.getRoadmap(slug)
       this.roadmap.set(response.roadmap)
@@ -83,6 +120,23 @@ export class RoadmapPage {
     } finally {
       this.loading.set(false)
     }
+  }
+
+  private async fetchCounts(slug: string): Promise<void> {
+    try {
+      const response = await this.api.getResources(slug)
+      this.counts.set(countResources(response.resources))
+    } catch {
+      this.counts.set(NO_COUNTS)
+    }
+  }
+
+  protected stageResources(stageId: string): number {
+    return this.counts().stages.get(stageId) ?? 0
+  }
+
+  protected stepResources(stepId: string): number {
+    return this.counts().steps.get(stepId) ?? 0
   }
 
   protected isOpen(stageId: string): boolean {
@@ -133,6 +187,7 @@ export class RoadmapPage {
       this.openStageIds.set(new Set<string>())
       this.added.set(response.added)
       void this.skills.load(true)
+      void this.fetchCounts(this.slug())
     } catch (error: unknown) {
       this.error.set(describeHttpError(error))
     } finally {

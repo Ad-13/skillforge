@@ -205,6 +205,7 @@ export const mapService = {
         goalName: skill.name,
         goalKind: skill.kind,
         pathNames: [],
+        mapNames: [],
         language: skill.learningLanguage,
         context: {
           lens,
@@ -263,8 +264,9 @@ export const mapService = {
     const lens = node.skillMap.lens as LensName
     const skill = node.skillMap.userSkill
 
-    const [mapSlugs, siblings, linkBySlug, owner] = await Promise.all([
+    const [mapSlugs, mapLabels, siblings, linkBySlug, owner] = await Promise.all([
       mapRepository.slugsInMap(node.skillMapId),
+      mapRepository.labelsInMap(node.skillMapId),
       mapRepository.childrenOf(node.id),
       skillRepository.slugIndexForUser(userId),
       skillRepository.findBySlug(userId, skill.slug),
@@ -281,6 +283,7 @@ export const mapService = {
       goalKind: skill.kind,
 
       pathNames: [...node.ancestorSlugs, node.slug],
+      mapNames: mapLabels,
       language: skill.learningLanguage,
       context: {
         lens,

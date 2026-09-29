@@ -4,6 +4,8 @@ import { mapRepository } from '../maps/map.repository.ts'
 import { cleanImportedName, dedupeByName } from '../../lib/import-clean.ts'
 import { filterImportCandidates } from '../ai/import-filter.ts'
 import { canonicaliseOrThrow } from '../../lib/canonical.ts'
+import { parseTrustedSkills } from '../../lib/trusted-skills.ts'
+import { env } from '../../config/env.ts'
 import { identifySkill } from '../ai/identify.ts'
 import { BadRequestError, NotFoundError } from '../../lib/errors.ts'
 import { summariseProgress, type ProgressStage } from '../../lib/progress.ts'
@@ -134,6 +136,8 @@ const toDetail = (skill: UserSkillWithRoadmap): SkillDetail => ({
   })),
 })
 
+const TRUSTED = parseTrustedSkills(env.TRUSTED_SKILLS)
+
 export const skillService = {
   async listForUser(userId: string): Promise<SkillSummary[]> {
     const skills = await skillRepository.listByUserId(userId)
@@ -147,8 +151,19 @@ export const skillService = {
   },
 
   async create(userId: string, input: CreateSkillInput): Promise<CreateSkillResult> {
+    const canonical = canonicaliseOrThrow(input.name)
 
-    canonicaliseOrThrow(input.name)
+    if (TRUSTED.has(canonical.slug)) {
+      const skill = await skillRepository.upsertBySlug({
+        userId,
+        name: canonical.name,
+        slug: canonical.slug,
+        source: 'MANUAL',
+        kind: 'CONCEPT',
+      })
+      await mapRepository.linkNodesBySlug(userId, skill.slug, skill.id)
+      return { status: 'created', skill: toSummary(skill) }
+    }
 
     const identified = await identifySkill(input.name, 'EN')
 

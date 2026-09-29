@@ -26,6 +26,8 @@ const schema = z.object({
   AI_BASE_URL: z.url().default('https://api.groq.com/openai/v1'),
   AI_API_KEY: z.string().min(1),
   AI_MODEL: z.string().min(1).default('openai/gpt-oss-120b'),
+
+  TRUSTED_SKILLS: z.string().optional(),
 })
 
 const parsed = schema.safeParse(process.env)
